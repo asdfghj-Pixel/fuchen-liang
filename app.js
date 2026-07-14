@@ -89,7 +89,7 @@
       return new Promise(resolve => {
         element.textContent = '';
         let i = 0;
-        const timer = setInterval(() => {
+        const timer = setInterval(() {
           element.textContent += text[i];
           i++;
           if (i >= text.length) {
@@ -137,6 +137,7 @@
         try {
           const saveData = JSON.parse(data);
           const saved = saveData.state || {};
+          // 深合并：确保嵌套对象（如 shared.linkage, shared.completedModes）的字段不丢失
           const deepMerge = (target, source) => {
             for (const key in source) {
               if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
@@ -154,6 +155,7 @@
           console.error('加载存档失败:', e);
         }
       }
+      // 确保 shared 对象结构完整
       if (!GameState.shared) GameState.shared = {};
       if (!GameState.shared.linkage) GameState.shared.linkage = { entertainmentSaveId: null, careerSaveId: null, crossModeEvents: [], triggeredResonances: [] };
       if (!GameState.shared.completedModes) GameState.shared.completedModes = { entertainment: false, career: false };
@@ -172,6 +174,8 @@
     },
 
     handleModeSwitch: (fromMode, toMode) => {
+      // 只记录联动 ID，实际的数值加成由各模式的 startGame 中的
+      // applyLinkageBonus / applyCareerFeedback 负责（避免重复应用或覆盖属性）
       if (fromMode === 'entertainment' && toMode === 'career') {
         GameState.shared.linkage.entertainmentSaveId = Date.now();
       }
@@ -328,3 +332,222 @@
 
     return bonus;
   }
+  function triggerCrossModeEvents(fromMode, toMode) {
+    const linkage = GameState.shared.linkage;
+    const origin = GameState.origin;
+    const strength = origin ? (GameData.origins[origin]?.linkageStrength?.L4 || 100) : 100;
+
+    if (strength < 30) return;
+
+    const crossModeEvents = GameData.crossModeEvents || [];
+    const filteredEvents = crossModeEvents.filter(event => 
+      event.triggerMode === fromMode && event.resonateMode === toMode
+    );
+
+    const applicableEvents = filteredEvents.filter(event => {
+      if (fromMode === 'career') {
+        if (event.id === 'linkage_rebel_join') {
+          return GameState.career.choiceHistory.some(c => c.includes('投奔义师'));
+        }
+        if (event.id === 'linkage_battle_victory') {
+          return GameState.career.eventHistory.includes('battle_victory') && !GameState.career.diedTragic;
+        }
+        if (event.id === 'linkage_impeachment_crisis') {
+          return GameState.career.guanxi < 15;
+        }
+        if (event.id === 'linkage_bribe_disaster') {
+          return GameState.career.choiceHistory.some(c => c.includes('破财免灾'));
+        }
+        if (event.id === 'linkage_houjing_siege') {
+          return GameState.career.survivalInHoujing && GameState.career.choiceHistory.some(c => c.includes('守城'));
+        }
+        return true;
+      } else {
+        if (event.id === 'linkage_rural_to_urban') {
+          return GameState.entertainment.location === 'urban';
+        }
+        if (event.id === 'linkage_temple_land_loss') {
+          return GameState.entertainment.eventHistory.some(e => e.includes('寺院') && e.includes('田产'));
+        }
+        if (event.id === 'linkage_business_success') {
+          return GameState.entertainment.totalBusinessProfit >= 1000;
+        }
+        if (event.id === 'linkage_tax_death') {
+          return GameState.entertainment.eventHistory.some(e => e.includes('赋税') && e.includes('去世'));
+        }
+        if (event.id === 'linkage_buddhist_convert') {
+          return GameState.entertainment.ideology?.tags?.includes('皈依佛教');
+        }
+        return true;
+      }
+    });
+
+    const availableEvents = applicableEvents.filter(e => 
+      !linkage.triggeredResonances.includes(e.id)
+    );
+
+    const maxResonances = Math.floor(3 * (strength / 100));
+    const selectedEvents = Utils.sample(availableEvents, Math.min(maxResonances, availableEvents.length));
+
+    selectedEvents.forEach(event => {
+      linkage.triggeredResonances.push(event.id);
+      linkage.crossModeEvents.push(event);
+
+      if (toMode === 'career') {
+        if (event.effects.guanxi) GameState.career.guanxi += event.effects.guanxi;
+        if (event.effects.civil) GameState.career.civil += event.effects.civil;
+        if (event.effects.military) GameState.career.military += event.effects.military;
+        if (event.effects.emperorFavor) GameState.career.emperorFavor += event.effects.emperorFavor;
+      } else {
+        if (event.effects.money) GameState.entertainment.money += event.effects.money;
+        if (event.effects.food) GameState.entertainment.food += event.effects.food;
+        if (event.effects.reputation) GameState.entertainment.reputation += event.effects.reputation;
+        if (event.effects.health) GameState.entertainment.health += event.effects.health;
+        if (event.effects.land) GameState.entertainment.land += event.effects.land;
+      }
+    });
+
+    return selectedEvents;
+  }
+
+  function checkAchievements() {
+    const achievements = GameData.achievements || {};
+    const completedModes = GameState.shared.completedModes;
+    const careerEnding = GameState.career.ending;
+    const entertainmentEnding = GameState.entertainment.ending;
+    const origin = GameState.origin;
+    const careerRank = GameState.career.currentRank;
+    const entertainmentMoney = GameState.entertainment.money;
+
+    const checkList = [
+      { key: '第一桶金', condition: completedModes.career || completedModes.entertainment },
+      { key: '双轨贯通', condition: completedModes.career && completedModes.entertainment },
+      { key: '寒门崛起', condition: origin === 'hanmen' && careerRank === '三公' },
+      { key: '门阀陨落', condition: origin === 'high-shizu' && entertainmentMoney < 50 },
+      { key: '殉节者', condition: GameState.career.choiceHistory.some(c => c.includes('不投降')) },
+      { key: '虎口余生', condition: GameState.career.guanxi < 5 && !GameState.career.diedTragic }
+    ];
+
+    checkList.forEach(item => {
+      if (item.condition && !GameState.shared.achievements.includes(item.key)) {
+        GameState.shared.achievements.push(item.key);
+      }
+    });
+
+    if (completedModes.career && completedModes.entertainment) {
+      const lifeEvaluation = calculateCompleteLifeEvaluation();
+      if (lifeEvaluation.achievement && !GameState.shared.achievements.includes(lifeEvaluation.achievement)) {
+        GameState.shared.achievements.push(lifeEvaluation.achievement);
+      }
+    }
+
+    Utils.save();
+  }
+
+  function calculateCompleteLifeEvaluation() {
+    const careerEnding = GameState.career.ending;
+    const entertainmentEnding = GameState.entertainment.ending;
+    const entertainmentMoney = GameState.entertainment.money;
+    const entertainmentReputation = GameState.entertainment.reputation;
+
+    let evaluation = '';
+    let achievement = '';
+
+    const isWealthy = entertainmentMoney >= 1000 && entertainmentReputation >= 30;
+    const isPoor = entertainmentMoney < 50 && entertainmentReputation < 20;
+    const isGoodCareer = ['A', 'B', 'C', 'N'].includes(careerEnding);
+    const isBadCareer = ['D', 'E', 'H', 'M'].includes(careerEnding);
+    const isHoujingSurvive = GameState.career.survivalInHoujing;
+    const isHoujingDead = GameState.career.diedTragic && GameState.career.eventHistory.some(e => e.includes('侯景'));
+    const isBuddhist = GameState.entertainment.ideology?.tags?.includes('皈依佛教');
+    const isBusinessRich = entertainmentMoney >= 3000;
+    const isMarriagePath = ['K', 'P', 'Q'].includes(careerEnding);
+
+    if (isWealthy && isGoodCareer) {
+      evaluation = '圆满人生';
+      achievement = '生前身后名';
+    } else if (isWealthy && isBadCareer) {
+      evaluation = '先甜后苦';
+      achievement = '金玉其外';
+    } else if (isPoor && isGoodCareer) {
+      evaluation = '死要面子活受罪';
+      achievement = '冷暖自知';
+    } else if (isPoor && isBadCareer) {
+      evaluation = '人生两苦';
+      achievement = '人生两苦';
+    } else if (isBuddhist && isHoujingSurvive) {
+      evaluation = '劫后皈依';
+      achievement = '看破红尘';
+    } else if (isBuddhist && isHoujingDead) {
+      evaluation = '殉道者';
+      achievement = '以身殉道';
+    } else if (isPoor && isHoujingDead) {
+      evaluation = '满门忠烈';
+      achievement = '举家殉国';
+    } else if (isWealthy && isHoujingSurvive) {
+      evaluation = '乱世幸存者';
+      achievement = '活着就是胜利';
+    } else if (isBusinessRich && isMarriagePath) {
+      evaluation = '富贵险中求';
+      achievement = '富贵险中求';
+    } else {
+      evaluation = '平淡一生';
+    }
+
+    return { evaluation, achievement };
+  }
+  global.GameState = GameState;
+  global.Utils = Utils;
+  global.checkAchievements = checkAchievements;
+  global.calculateCompleteLifeEvaluation = calculateCompleteLifeEvaluation;
+
+  window.debug = {
+    getState: () => GameState,
+    setState: (s) => Object.assign(GameState, s),
+    save: () => Utils.save(),
+    load: () => Utils.load(),
+
+    triggerEvent: (id) => {
+      if (typeof CareerMode !== 'undefined' && CareerMode.renderEvent) {
+        CareerMode.renderEvent(id);
+      }
+    },
+
+    forceEnding: (type) => {
+      if (typeof CareerMode !== 'undefined' && CareerMode.renderEnding) {
+        CareerMode.renderEnding(type);
+      }
+    },
+
+    listEvents: () => Object.keys(GameData.careerEvents),
+    setStats: (m, c, g) => {
+      GameState.career.military = m;
+      GameState.career.civil = c;
+      GameState.career.guanxi = g;
+    },
+
+    listNpcRelations: () => GameState.career.npcRelations,
+    setNpcAffinity: (npcId, val) => {
+      GameState.career.npcRelations[npcId] = { affinity: val };
+    },
+
+    resetTutorial: () => {
+      localStorage.removeItem('tutorial_completed');
+      localStorage.removeItem('tutorial_seen');
+      localStorage.removeItem('hints_shown');
+      alert('引导状态已重置');
+    },
+
+    skipTutorial: () => {
+      localStorage.setItem('tutorial_completed', 'true');
+      alert('已跳过引导局');
+    },
+
+    setMoney: (v) => { GameState.entertainment.money = v; },
+    nextSeason: () => {
+      if (typeof EntertainmentMode !== 'undefined' && EntertainmentMode.nextSeason) {
+        EntertainmentMode.nextSeason();
+      }
+    }
+  };
+})(window);
