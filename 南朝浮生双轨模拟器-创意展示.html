@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮沉梁 - 南朝浮生双轨模拟器 · 创意展示</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #2d1810;
+  --bg-darker: #1a0f0a;
+  --gold: #d4a853;
+  --gold-light: #e8c97a;
+  --ochre: #8b4513;
+  --beige: #e8d5b7;
+  --beige-light: #f0e6d4;
+  --border: #5c3317;
+  --panel: rgba(45, 24, 16, 0.75);
+  --panel-light: rgba(232, 213, 183, 0.08);
+  --text: #e8d5b7;
+  --text-muted: #b8a48e;
+  --hover-bg: rgba(212, 168, 83, 0.12);
+  --radius: 12px;
+  --transition: all 0.3s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', SimSun, serif;
+  background: linear-gradient(170deg, var(--bg-darker) 0%, var(--bg-dark) 40%, #3a2218 100%);
+  color: var(--text);
+  line-height: 1.85;
+  min-height: 100vh;
+}
+
+.container { max-width: 1000px; margin: 0 auto; padding: 20px 16px 40px; }
+
+.header {
+  text-align: center;
+  padding: 50px 20px 36px;
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 24px auto 0;
+}
+
+.header h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 10px;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 12px rgba(212, 168, 83, 0.3);
+}
+
+.header .subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+}
+
+.tag-group {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tag {
+  display: inline-block;
+  padding: 6px 20px;
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  color: var(--gold);
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  background: rgba(212, 168, 83, 0.08);
+}
+
+.tag.highlight {
+  background: rgba(192, 57, 43, 0.2);
+  border-color: rgba(192, 57, 43, 0.5);
+  color: #f5b7a6;
+}
+
+.highlight-box {
+  background: rgba(212, 168, 83, 0.06);
+  border-left: 4px solid var(--gold);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+  font-size: 1.02rem;
+  line-height: 1.9;
+  color: var(--beige-light);
+}
+
+.section { margin-bottom: 40px; }
+
+.section-title {
+  color: var(--gold);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(212, 168, 83, 0.2);
+  position: relative;
+}
+
+.section-title::before {
+  content: '◆';
+  margin-right: 10px;
+  font-size: 0.9rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 20px 10px;
+  background: var(--panel);
+  border: 1px solid rgba(92, 51, 23, 0.5);
+  border-radius: var(--radius);
+  transition: var(--transition);
+}
+
+.stat-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212, 168, 83, 0.3);
+}
+
+.stat-number {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1.2;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  letter-spacing: 0.5px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.two-col .card { margin-bottom: 0; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid rgba(92, 51, 23, 0.6);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.3), transparent);
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212, 168, 83, 0.35);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mode-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  padding: 3px 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.mode-label.career {
+  background: rgba(139, 69, 19, 0.3);
+  border: 1px solid var(--ochre);
+  color: var(--beige-light);
+}
+
+.mode-label.life {
+  background: rgba(212, 168, 83, 0.15);
+  border: 1px solid var(--gold);
+  color: var(--gold-light);
+}
+
+.card h3 {
+  font-size: 1.15rem;
+  color: var(--gold);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.card p, .card li {
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.8;
+}
+
+.card ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+}
+
+.card ul li {
+  padding: 4px 0;
+  position: relative;
+  padding-left: 16px;
+}
+
+.card ul li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.identity-card {
+  background: var(--panel);
+  border: 1px solid rgba(92, 51, 23, 0.5);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.identity-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212, 168, 83, 0.35);
+}
+
+.identity-icon { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+.identity-name { font-size: 1rem; color: var(--gold); font-weight: 600; margin-bottom: 4px; }
+.identity-origin { font-size: 0.78rem; color: var(--ochre); margin-bottom: 8px; }
+.identity-desc { font-size: 0.86rem; color: var(--text); line-height: 1.6; }
+
+.timeline {
+  position: relative;
+  padding-left: 40px;
+  margin: 10px 0;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--gold), rgba(212, 168, 83, 0.2));
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 30px;
+  padding-bottom: 4px;
+}
+
+.timeline-item:last-child { margin-bottom: 0; }
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -30px;
+  top: 8px;
+  width: 10px;
+  height: 10px;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(212, 168, 83, 0.4);
+}
+
+.timeline-date {
+  font-size: 1rem;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.timeline-content {
+  font-size: 0.92rem;
+  color: var(--text);
+  line-height: 1.8;
+}
+
+.timeline-source {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+}
+
+.feature-list li {
+  padding: 12px 18px;
+  margin-bottom: 10px;
+  background: var(--panel);
+  border: 1px solid rgba(92, 51, 23, 0.4);
+  border-radius: var(--radius);
+  font-size: 0.92rem;
+  color: var(--text);
+  transition: var(--transition);
+  line-height: 1.75;
+}
+
+.feature-list li:hover {
+  background: var(--hover-bg);
+  border-color: rgba(212, 168, 83, 0.3);
+  transform: translateY(-2px);
+}
+
+.feature-list li::before {
+  content: '✦ ';
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.quote-area {
+  background: rgba(212, 168, 83, 0.06);
+  border: 1px solid rgba(212, 168, 83, 0.3);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+}
+
+.quote-item {
+  margin-bottom: 24px;
+  padding-left: 20px;
+  border-left: 3px solid var(--gold);
+}
+
+.quote-item:last-child { margin-bottom: 0; }
+
+.quote-text {
+  font-size: 1rem;
+  color: var(--beige-light);
+  line-height: 1.9;
+  font-style: italic;
+}
+
+.quote-author {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--gold);
+  margin-top: 8px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+th {
+  background: rgba(212, 168, 83, 0.12);
+  color: var(--gold);
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 2px solid rgba(212, 168, 83, 0.3);
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(92, 51, 23, 0.3);
+  color: var(--text);
+  line-height: 1.7;
+}
+
+tr:hover td { background: var(--hover-bg); }
+
+.systems-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.system-card {
+  background: var(--panel);
+  border: 1px solid rgba(92, 51, 23, 0.5);
+  border-radius: var(--radius);
+  padding: 22px;
+  transition: var(--transition);
+}
+
+.system-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212, 168, 83, 0.35);
+}
+
+.system-icon { font-size: 1.5rem; margin-bottom: 10px; display: block; }
+.system-name {
+  font-size: 1.05rem;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.system-desc {
+  font-size: 0.88rem;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+
+.system-features {
+  list-style: none;
+  padding: 0;
+}
+
+.system-features li {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 3px 0;
+  padding-left: 14px;
+  position: relative;
+}
+
+.system-features li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+}
+
+.divider {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  margin: 36px auto;
+}
+
+.footer {
+  text-align: center;
+  padding: 40px 20px 20px;
+  border-top: 1px solid rgba(212, 168, 83, 0.15);
+  margin-top: 40px;
+}
+
+.footer-title {
+  font-size: 1.05rem;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.footer-info {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.footer-slogan {
+  font-size: 0.85rem;
+  color: var(--gold-light);
+  margin-top: 12px;
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .two-col, .identity-grid, .systems-grid { grid-template-columns: 1fr; }
+  .header h1 { font-size: 2.2rem; letter-spacing: 6px; }
+  .tag-group { gap: 8px; }
+  .section-title { font-size: 1.15rem; }
+  .stat-number { font-size: 1.5rem; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="header">
+    <h1>浮沉梁</h1>
+    <p class="subtitle">AI古今生活镜 · 南朝浮生双轨模拟器</p>
+    <div class="tag-group">
+      <span class="tag">生活娱乐赛道</span>
+      <span class="tag">古籍活化附加赛题</span>
+      <span class="tag highlight">宋齐梁 · 公元479-555年</span>
+    </div>
+  </header>
+
+  <div class="highlight-box">
+    "没有史料内核的历史模拟，跟橙光、闪艺没有本质区别。本作品所有内容，有史可依。"
+  </div>
+
+  <section class="section">
+    <h2 class="section-title">核心数据</h2>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-number">105</span>
+        <span class="stat-label">位历史人物结构化数据</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">37</span>
+        <span class="stat-label">篇《荆楚岁时记》节令时俗</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">24</span>
+        <span class="stat-label">个节令节点全年推演</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">7</span>
+        <span class="stat-label">大生活系统</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number">47+</span>
+        <span class="stat-label">处史料引用一键查证</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">双模式架构</h2>
+    <div class="two-col">
+      <div class="card">
+        <span class="mode-label career">职场模式</span>
+        <h3>南朝官场仕途决策模拟</h3>
+        <ul>
+          <li>寒门 / 低级士族 / 高门士族三类出身</li>
+          <li>体验齐末乱世 → 萧梁开国 → 天监改制 → 侯景之乱</li>
+          <li>科举前时代的门阀政治与寒门逆袭</li>
+          <li>宋齐九品官制与天监十八班官制动态切换</li>
+          <li>结局名家评价：钱穆、吕思勉、陈寅恪等史学大家点评</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="mode-label life">生活娱乐模式</span>
+        <h3>建康城全景生活沉浸式体验</h3>
+        <ul>
+          <li>按《荆楚岁时记》24节令推进</li>
+          <li>7种身份：自耕农、佃户、奴隶、兵户、吏户、手工业者、商人</li>
+          <li>城乡双轨：城市社会关系网络 / 农村社会关系网络</li>
+          <li>7大生活系统：佛教、道教、饮食、服饰、住所、婚姻丧葬、民间信仰</li>
+          <li>再现南朝建康城四季烟火与社会百态</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">七类可选身份</h2>
+    <div class="identity-grid">
+      <div class="identity-card">
+        <span class="identity-icon">🌾</span>
+        <div class="identity-name">自耕农</div>
+        <div class="identity-origin">农村模式</div>
+        <div class="identity-desc">三十亩薄田，日出而作，日落而息，面朝黄土背朝天。</div>
+      </div>
+      <div class="identity-card">
+        <span class="identity-icon">🏠</span>
+        <div class="identity-name">佃户</div>
+        <div class="identity-origin">农村模式</div>
+        <div class="identity-desc">租种地主田地，交租后所剩无几，半自由身份，依附生存。</div>
+      </div>
+      <div class="identity-card">
+        <span class="identity-icon">⚔️</span>
+        <div class="identity-name">兵户</div>
+        <div class="identity-origin">农村模式</div>
+        <div class="identity-desc">世代为兵，军籍束缚，征战沙场，生死无常。</div>
+      </div>
+      <div class="identity-card">
+        <span class="identity-icon">📜</span>
+        <div class="identity-name">吏户</div>
+        <div class="identity-origin">城市模式</div>
+        <div class="identity-desc">县衙小吏，文书繁杂，夹缝求生，人脉为王。</div>
+      </div>
+      <div class="identity-card">
+        <span class="identity-icon">🔨</span>
+        <div class="identity-name">手工业者</div>
+        <div class="identity-origin">城市模式</div>
+        <div class="identity-desc">纺织、冶铸、造船、制瓷、造纸，技艺立身。</div>
+      </div>
+      <div class="identity-card">
+        <span class="identity-icon">🏪</span>
+        <div class="identity-name">商人</div>
+        <div class="identity-origin">城市模式</div>
+        <div class="identity-desc">秦淮河畔商铺，南北互市，白衣商人，逐利而生。</div>
+      </div>
+      <div class="identity-card">
+        <span class="identity-icon">⛓️</span>
+        <div class="identity-name">奴隶</div>
+        <div class="identity-origin">农村模式</div>
+        <div class="identity-desc">不自由身，为主人劳作，唯有望主人放免获得自由。</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">七大生活系统</h2>
+    <div class="systems-grid">
+      <div class="system-card">
+        <span class="system-icon">🏯</span>
+        <div class="system-name">佛教系统</div>
+        <div class="system-desc">梁武帝四次舍身同泰寺，寺院经济体系，施舍压力与功德值系统。</div>
+        <ul class="system-features">
+          <li>功德值（0-100）动态系统</li>
+          <li>寺院土地兼并与僧祇户</li>
+          <li>出家机制与皈依佛门结局</li>
+          <li>范缜《神灭论》思想抉择</li>
+        </ul>
+      </div>
+      <div class="system-card">
+        <span class="system-icon">🧘</span>
+        <div class="system-name">道教系统</div>
+        <div class="system-desc">陶弘景"山中宰相"，天师道民间网络，道教作为佛教替代信仰。</div>
+        <ul class="system-features">
+          <li>道教等级与茅山人脉</li>
+          <li>陶弘景医药求方事件</li>
+          <li>天师道滨海地域传播</li>
+          <li>葛洪《抱朴子》炼丹术</li>
+        </ul>
+      </div>
+      <div class="system-card">
+        <span class="system-icon">🍚</span>
+        <div class="system-name">日常饮食系统</div>
+        <div class="system-desc">饮食等级差异，饱食度机制，饮茶饮酒社交系统。</div>
+        <ul class="system-features">
+          <li>饱食度每日消耗（15点）</li>
+          <li>主食/副食补充机制</li>
+          <li>饮茶待客与士族茶会</li>
+          <li>曲水流觞与名酒品鉴</li>
+        </ul>
+      </div>
+      <div class="system-card">
+        <span class="system-icon">👘</span>
+        <div class="system-name">服饰系统</div>
+        <div class="system-desc">服饰等级制度，衣冠抉择事件，木屐与名士风度。</div>
+        <ul class="system-features">
+          <li>粗布→布衣→绸衫→锦袍</li>
+          <li>衣冠升级抉择事件</li>
+          <li>木屐与名士风范标签</li>
+          <li>身份服饰约束</li>
+        </ul>
+      </div>
+      <div class="system-card">
+        <span class="system-icon">🏡</span>
+        <div class="system-name">住所园林系统</div>
+        <div class="system-desc">居住等级差异，园林雅集事件，建康名园探访。</div>
+        <ul class="system-features">
+          <li>草屋→修缮→迁居</li>
+          <li>华林园/鸡鸣山别墅</li>
+          <li>曲水流觞雅集</li>
+          <li>园林社交网络拓展</li>
+        </ul>
+      </div>
+      <div class="system-card">
+        <span class="system-icon">💍</span>
+        <div class="system-name">婚姻丧葬系统</div>
+        <div class="system-desc">世庶不婚制度，早婚习俗，薄葬之风。</div>
+        <ul class="system-features">
+          <li>十五岁早婚抉择</li>
+          <li>门第婚与身份限制</li>
+          <li>厚葬/薄葬抉择</li>
+          <li>指腹婚/冥婚习俗</li>
+        </ul>
+      </div>
+      <div class="system-card">
+        <span class="system-icon">🙏</span>
+        <div class="system-name">民间信仰系统</div>
+        <div class="system-desc">蒋神崇拜，社祭祈福，驱傩逐疫，民间信仰多元图景。</div>
+        <ul class="system-features">
+          <li>蒋神祭祀与军事庇护</li>
+          <li>社祭求丰收</li>
+          <li>迎紫姑占卜</li>
+          <li>蒋神与佛教冲突</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">岁时节令推演</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-date">正月初一 · 元日</div>
+        <div class="timeline-content">鸡鸣而起，庭前爆竹；进椒柏酒，饮桃汤，进屠苏酒。</div>
+        <span class="timeline-source">出处：《荆楚岁时记》</span>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">正月十五 · 上元</div>
+        <div class="timeline-content">迎紫姑，占卜蚕桑；燃灯观灯，夜游建康。</div>
+        <span class="timeline-source">出处：《荆楚岁时记》</span>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">三月上巳</div>
+        <div class="timeline-content">士女祓禊水滨，曲水流觞；参与士族雅集。</div>
+        <span class="timeline-source">出处：《荆楚岁时记》《世说新语》</span>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">五月端午</div>
+        <div class="timeline-content">竞渡、食粽、悬艾草、饮菖蒲酒。</div>
+        <span class="timeline-source">出处：《荆楚岁时记》</span>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">七月七夕</div>
+        <div class="timeline-content">妇女穿针乞巧，陈设瓜果于庭。</div>
+        <span class="timeline-source">出处：《荆楚岁时记》</span>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">九月重阳</div>
+        <div class="timeline-content">登高、饮菊花酒、佩茱萸囊；幕府山或钟山。</div>
+        <span class="timeline-source">出处：《荆楚岁时记》《南史》</span>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-date">腊月除夕</div>
+        <div class="timeline-content">祭祀祖先、守岁、年终结算，触发年度结局。</div>
+        <span class="timeline-source">出处：《荆楚岁时记》《颜氏家训》</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">核心功能亮点</h2>
+    <ul class="feature-list">
+      <li><strong>双轨社会关系网络</strong>：城市居民社会关系网络 + 农村社会关系网络，力导向可视化引擎，动态演化人物关系</li>
+      <li><strong>七大类生活系统</strong>：佛教功德系统、道教茅山网络、饮食饱食度、服饰等级、住所园林、婚姻丧葬、民间信仰蒋神崇拜</li>
+      <li><strong>岁时节令真实推演</strong>：严格按《荆楚岁时记》推进，AI生成沉浸式剧情，37篇节令时俗完整还原</li>
+      <li><strong>史料溯源一键查证</strong>：覆盖梁书/颜氏家训/世说新语/荆楚岁时记/宋书/南齐书/文选/陈寅恪史学论著</li>
+      <li><strong>地理空间系统</strong>：全国14州地图 + 建康城42地标平面图，基于谭其骧《中国历史地图集》</li>
+      <li><strong>年度复盘名家点评</strong>：史臣曰 + 钱穆/吕思勉/陈寅恪/田余庆/唐长孺等史学大家评价 + 古今生活智慧映射</li>
+      <li><strong>动态官制系统</strong>：宋齐九品官制与天监十八班官制切换，出身限制与清浊官路线影响晋升</li>
+    </ul>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">名家点评专栏</h2>
+    <div class="quote-area">
+      <div class="quote-item">
+        <div class="quote-text">"南朝本是一个病的时代。此所谓病，乃指文化病。若论文化病，北朝受病较南朝为浅，因此新生的希望亦在北朝，不在南朝。"</div>
+        <span class="quote-author">—— 钱穆《国史大纲》</span>
+      </div>
+      <div class="quote-item">
+        <div class="quote-text">"梁末之乱，为永嘉南渡后的一大结局。南朝士族在经过数百年腐化之后，于梁末被全部消灭。"</div>
+        <span class="quote-author">—— 陈寅恪《魏晋南北朝史讲演录》</span>
+      </div>
+      <div class="quote-item">
+        <div class="quote-text">"士族表面上极盛的时候也正是走向衰亡的开端。作为南朝第一个皇朝刘宋建国时，士族的力量已趋削弱了。"</div>
+        <span class="quote-author">—— 唐长孺《门阀制度的形成及其衰落》</span>
+      </div>
+      <div class="quote-item">
+        <div class="quote-text">"南朝排斥了门阀统治，恢复了皇权政治，但皇权政治的基础和格局并不能以此巩固下来，政权反而失去了稳定的因素。"</div>
+        <span class="quote-author">—— 田余庆《东晋门阀政治》</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">核心史料来源</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>史料</th>
+            <th>作者 / 时代</th>
+            <th>在作品中的应用</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>《荆楚岁时记》</td>
+            <td>南朝梁 · 宗懔</td>
+            <td>生活娱乐模式核心时间轴与节令活动数据库</td>
+          </tr>
+          <tr>
+            <td>《颜氏家训》</td>
+            <td>南北朝 · 颜之推</td>
+            <td>日常生活细节库、寒门学子原型、薄葬习俗</td>
+          </tr>
+          <tr>
+            <td>《梁书》《南史》</td>
+            <td>唐 · 姚思廉、李延寿</td>
+            <td>人物关系网络、梁武帝舍身同泰寺、侯景之乱</td>
+          </tr>
+          <tr>
+            <td>《世说新语》</td>
+            <td>南朝宋 · 刘义庆</td>
+            <td>士族雅集礼仪、服饰等级、曲水流觞</td>
+          </tr>
+          <tr>
+            <td>《南史·范缜传》</td>
+            <td>唐 · 李延寿</td>
+            <td>神灭论思想事件、形神相即哲学抉择</td>
+          </tr>
+          <tr>
+            <td>《梁书·陶弘景传》</td>
+            <td>唐 · 姚思廉</td>
+            <td>山中宰相事件、道教改革与上清派</td>
+          </tr>
+          <tr>
+            <td>陈寅恪《天师道与滨海地域之关系》</td>
+            <td>现代史学</td>
+            <td>天师道民间网络、士族与道教渊源</td>
+          </tr>
+          <tr>
+            <td>《宋书 · 州郡志》</td>
+            <td>南朝梁 · 沈约</td>
+            <td>地理空间系统行政区划数据</td>
+          </tr>
+          <tr>
+            <td>考古资料</td>
+            <td>—</td>
+            <td>南京南朝墓葬、画像砖宴饮图、六朝器物考证</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section">
+    <h2 class="section-title">各身份路线生活系统对接</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>身份</th>
+            <th>饮食核心事件</th>
+            <th>服饰核心事件</th>
+            <th>信仰核心事件</th>
+            <th>婚姻丧葬</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>自耕农</td>
+            <td>饱食度系统、饥荒抉择</td>
+            <td>进城被歧视事件</td>
+            <td>社祭/蒋神庙/功德施舍</td>
+            <td>早婚抉择、薄葬vs厚葬</td>
+          </tr>
+          <tr>
+            <td>佃户</td>
+            <td>饱食度系统、地租后剩余</td>
+            <td>粗麻衣→布衣升级</td>
+            <td>被迫施舍（地主要求）</td>
+            <td>奴婢配婚</td>
+          </tr>
+          <tr>
+            <td>奴隶</td>
+            <td>配给不足事件</td>
+            <td>无自主权</td>
+            <td>出家→获得自由的机会</td>
+            <td>主人配婚/放免条件</td>
+          </tr>
+          <tr>
+            <td>兵户</td>
+            <td>军粮配给系统</td>
+            <td>军装/甲胄</td>
+            <td>蒋神庇护、出征祭拜</td>
+            <td>同军营配偶、阵亡厚葬</td>
+          </tr>
+          <tr>
+            <td>吏户</td>
+            <td>宴饮应酬饮食</td>
+            <td>衣冠升级（影响仕途）</td>
+            <td>天师道/道教网络事件</td>
+            <td>联姻提升人脉</td>
+          </tr>
+          <tr>
+            <td>手工业者</td>
+            <td>茶与技艺的结合</td>
+            <td>工作服vs社交服</td>
+            <td>陶弘景订单事件</td>
+            <td>同行联姻/士族赏识</td>
+          </tr>
+          <tr>
+            <td>商人</td>
+            <td>以酒待客/名酒买卖</td>
+            <td>白衣→绸衫的阶层突破</td>
+            <td>寺院经济博弈、道教人脉</td>
+            <td>娶士族/富商女</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-title">参赛作品：浮沉梁 · AI古今生活镜 · 南朝双轨模拟器</div>
+    <div class="footer-info">创作者：吴科秀 ｜ 赛道：生活娱乐 + 古籍活化</div>
+    <div class="footer-slogan">本项目所有内容，有史可依。</div>
+  </footer>
+
+</div>
+
+</body>
+</html>

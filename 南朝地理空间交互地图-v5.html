@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>南朝輿圖 · 蕭梁疆域 — 職方大一統總圖古風版（時空驅動）</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Serif SC','SimSun',serif;background:#d8c8a8;color:#3d2810;overflow:hidden;height:100vh}
+.main-container{display:flex;height:100vh}
+.canvas-area{flex:1;position:relative;background:#d8c8a8;min-width:0;min-height:0;padding-bottom:60px}
+#mapCanvas{display:block;width:100%;height:100%;cursor:crosshair}
+.info-panel{width:380px;min-width:380px;background:#e8d5b7;border-left:2px solid #5c3d1f;overflow-y:auto;display:flex;flex-direction:column}
+.control-bar{position:absolute;top:0;left:0;right:380px;background:rgba(232,213,183,.92);border-bottom:1px solid #5c3d1f;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;z-index:10}
+.control-bar h1{font-size:1em;color:#5c3d1f;letter-spacing:4px;font-weight:700}
+.view-tabs{display:flex;gap:0}
+.view-tab{padding:8px 20px;border:1px solid #8b6540;background:rgba(160,120,60,.15);color:#5c3d1f;font-family:inherit;font-size:.85em;cursor:pointer;transition:all .2s}
+.view-tab:first-child{border-radius:4px 0 0 4px}
+.view-tab:last-child{border-radius:0 4px 4px 0}
+.view-tab.active{background:#8b6540;color:#e8d5b7;border-color:#8b6540}
+.view-tab:hover:not(.active){background:rgba(139,101,64,.3)}
+.panel-header{padding:20px;border-bottom:1px solid #5c3d1f;background:rgba(160,120,60,.08)}
+.panel-header h2{color:#5c3d1f;font-size:1.2em;margin-bottom:5px;font-weight:700}
+.panel-header .subtitle{font-size:.8em;color:#8b6540}
+.panel-content{padding:20px;flex:1;overflow-y:auto}
+.panel-section{margin-bottom:20px}
+.panel-section h3{color:#5c3d1f;font-size:.9em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(92,61,31,.25)}
+.panel-section p{font-size:.85em;line-height:1.8;color:#3d2810}
+.panel-section .quote{font-style:italic;color:#5c3d1f;border-left:3px solid #5c3d1f;padding-left:12px;margin:10px 0;font-size:.85em;background:rgba(92,61,31,.05);padding:8px 12px}
+.tag-list{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.tag{padding:4px 10px;border-radius:2px;font-size:.75em}
+.tag-capital{background:rgba(194,58,42,.15);color:#c23a2a;border:1px solid #c23a2a}
+.tag-military{background:rgba(194,58,42,.1);color:#b8342a;border:1px solid #b8342a}
+.tag-economic{background:rgba(90,138,106,.15);color:#5a8a6a;border:1px solid #5a8a6a}
+.tag-cultural{background:rgba(58,107,124,.15);color:#3a6b7c;border:1px solid #3a6b7c}
+.tag-border{background:rgba(139,101,64,.15);color:#8b6540;border:1px solid #8b6540}
+.tag-residence{background:rgba(160,120,60,.15);color:#8b6540;border:1px solid #8b6540}
+.tag-market{background:rgba(58,107,124,.1);color:#3a6b7c;border:1px solid #3a6b7c}
+.tag-craft{background:rgba(139,101,64,.1);color:#8b6540;border:1px solid #8b6540}
+.empty-state{text-align:center;padding:60px 20px;color:#8b6540}
+.empty-state p{margin:8px 0}
+.legend{position:absolute;bottom:80px;left:20px;background:rgba(232,213,183,.95);border:1px solid #5c3d1f;border-radius:2px;padding:12px 16px;z-index:10;max-width:200px}
+.legend-title{font-size:.8em;color:#5c3d1f;margin-bottom:8px;font-weight:700}
+.legend-item{display:flex;align-items:center;margin:4px 0;font-size:.75em;color:#5c3d1f}
+.legend-dot{width:10px;height:10px;margin-right:8px;flex-shrink:0}
+.zoom-controls{position:absolute;bottom:80px;right:20px;display:flex;flex-direction:column;gap:5px;z-index:10}
+.zoom-btn{width:36px;height:36px;border:1px solid #5c3d1f;background:rgba(232,213,183,.95);color:#5c3d1f;font-size:1.2em;cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.zoom-btn:hover{background:rgba(139,101,64,.3)}
+.btn-link{display:inline-block;padding:10px 20px;background:#8b6540;color:#e8d5b7;border:none;border-radius:2px;font-family:inherit;font-size:.9em;cursor:pointer;text-decoration:none;margin-top:10px;letter-spacing:1px}
+.btn-link:hover{background:#5c3d1f}
+.btn-back{display:inline-block;padding:8px 16px;background:rgba(139,101,64,.2);border:1px solid #8b6540;color:#5c3d1f;border-radius:2px;font-family:inherit;font-size:.85em;cursor:pointer;margin-top:10px}
+.btn-back:hover{background:rgba(139,101,64,.35)}
+.county-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.county-tag{padding:3px 8px;background:rgba(139,101,64,.12);border:1px solid rgba(92,61,31,.3);border-radius:2px;font-size:.78em;color:#5c3d1f}
+
+/* ===== 时间轴 ===== */
+.timeline-container{position:absolute;bottom:0;left:0;right:380px;height:60px;background:rgba(232,213,183,.92);border-top:2px solid #5c3d1f;z-index:15;display:flex;align-items:center;padding:0 20px;gap:10px}
+.timeline-btn{width:32px;height:32px;border:1px solid #8b6540;background:rgba(160,120,60,.15);color:#5c3d1f;font-family:inherit;font-size:1em;cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.timeline-btn:hover{background:rgba(139,101,64,.3)}
+.timeline-phases{display:flex;align-items:center;gap:0;flex:1;justify-content:center}
+.phase-item{display:flex;align-items:center}
+.phase-btn{padding:7px 18px;border:1px solid #8b6540;background:rgba(160,120,60,.15);color:#5c3d1f;font-family:inherit;font-size:.82em;cursor:pointer;transition:all .25s;white-space:nowrap;letter-spacing:1px}
+.phase-btn:first-child{border-radius:2px 0 0 2px}
+.phase-btn:last-child{border-radius:0 2px 2px 0}
+.phase-btn.active{background:#8b6540;color:#e8d5b7;border-color:#8b6540;box-shadow:inset 0 0 8px rgba(0,0,0,.15)}
+.phase-btn:hover:not(.active){background:rgba(139,101,64,.25)}
+.phase-separator{width:20px;height:0;border-top:1px dashed #8b6540;opacity:.6}
+.timeline-desc{position:absolute;bottom:62px;left:50%;transform:translateX(-50%);background:rgba(232,213,183,.95);border:1px solid #5c3d1f;border-radius:2px;padding:6px 14px;font-size:.78em;color:#5c3d1f;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s}
+.timeline-container:hover .timeline-desc{opacity:1}
+
+/* ===== 迷你地图 ===== */
+.minimap-wrap{position:absolute;bottom:70px;right:15px;width:180px;height:120px;background:rgba(232,213,183,.9);border:1px solid #5c3d1f;border-radius:2px;z-index:12;padding:4px;cursor:pointer}
+.minimap-title{position:absolute;top:-18px;right:0;font-size:.72em;color:#5c3d1f;letter-spacing:1px;background:rgba(232,213,183,.9);padding:2px 6px;border:1px solid #5c3d1f;border-bottom:none;border-radius:2px 2px 0 0}
+#minimapCanvas{display:block;width:100%;height:100%}
+
+/* ===== 信息面板标签页 ===== */
+.panel-tabs{display:flex;border-bottom:1px solid rgba(92,61,31,.25);margin-bottom:0}
+.panel-tab{padding:8px 16px;border:none;background:transparent;color:#8b6540;font-family:inherit;font-size:.82em;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.panel-tab.active{color:#5c3d1f;border-bottom-color:#5c3d1f;font-weight:700}
+.panel-tab:hover:not(.active){color:#5c3d1f}
+
+/* 解锁提示 */
+.unlock-hint{position:absolute;pointer-events:none;background:rgba(232,213,183,.95);border:1px solid #d4a853;color:#5c3d1f;padding:4px 10px;font-size:.75em;border-radius:2px;white-space:nowrap;z-index:20;opacity:0;transition:opacity .25s}
+.unlock-hint.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="main-container">
+<div class="canvas-area" id="canvasArea">
+<div class="control-bar">
+<h1 id="controlTitle">南朝輿圖 · 蕭梁疆域</h1>
+<div class="view-tabs">
+<button class="view-tab active" data-view="national">全國輿圖</button>
+<button class="view-tab" data-view="jiankang">建康城圖</button>
+</div>
+</div>
+<canvas id="mapCanvas"></canvas>
+<div class="unlock-hint" id="unlockHint">[點擊探索建康城]</div>
+<div class="legend" id="mapLegend"></div>
+<div class="zoom-controls">
+<button class="zoom-btn" id="zoomIn">+</button>
+<button class="zoom-btn" id="zoomOut">−</button>
+<button class="zoom-btn" id="zoomReset">R</button>
+</div>
+<!-- 迷你地图 -->
+<div class="minimap-wrap" id="minimapWrap">
+<div class="minimap-title">輿圖略覽</div>
+<canvas id="minimapCanvas"></canvas>
+</div>
+<!-- 时间轴 -->
+<div class="timeline-container" id="timelineContainer">
+<button class="timeline-btn" id="phasePrev">◀</button>
+<div class="timeline-phases">
+<div class="phase-item"><button class="phase-btn active" data-phase="0">宋末齊初</button></div>
+<div class="phase-separator"></div>
+<div class="phase-item"><button class="phase-btn" data-phase="1">齊末梁初</button></div>
+<div class="phase-separator"></div>
+<div class="phase-item"><button class="phase-btn" data-phase="2">梁朝盛世</button></div>
+<div class="phase-separator"></div>
+<div class="phase-item"><button class="phase-btn" data-phase="3">侯景之亂</button></div>
+</div>
+<button class="timeline-btn" id="phaseNext">▶</button>
+<div class="timeline-desc" id="timelineDesc">宋末齊初：蕭衍據雍州，與荆州結盟，蓄勢待發</div>
+</div>
+</div>
+<div class="info-panel" id="infoPanel">
+<div class="empty-state" id="emptyState">
+<p style="font-size:1.8em;color:#5c3d1f;font-weight:700">輿</p>
+<p>點擊圖上之地</p>
+<p>以觀歷史地理之詳</p>
+</div>
+<div id="panelContent" style="display:none">
+<div class="panel-header">
+<h2 id="panelTitle"></h2>
+<div class="subtitle" id="panelSubtitle"></div>
+</div>
+<div class="panel-tabs" id="panelTabs" style="display:none">
+<button class="panel-tab active" data-ptab="detail">詳情</button>
+<button class="panel-tab" data-ptab="events">歷史事件</button>
+</div>
+<div class="panel-content" id="panelBody"></div>
+</div>
+</div>
+</div>
+
+<script>
+// ========== 画布初始化 ==========
+var canvas = document.getElementById('mapCanvas');
+var ctx = canvas.getContext('2d');
+var width = 0, height = 0;
+var dpr = window.devicePixelRatio || 1;
+
+var miniCanvas = document.getElementById('minimapCanvas');
+var miniCtx = miniCanvas.getContext('2d');
+var miniW = 180, miniH = 120;
+
+function resize() {
+    var area = document.getElementById('canvasArea');
+    width = area.clientWidth || (window.innerWidth - 380);
+    height = area.clientHeight || window.innerHeight;
+    if (width < 200) width = window.innerWidth - 380;
+    if (height < 200) height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+    // 迷你地图
+    miniCanvas.width = miniW * dpr;
+    miniCanvas.height = miniH * dpr;
+    miniCanvas.style.width = miniW + 'px';
+    miniCanvas.style.height = miniH + 'px';
+}
+
+// ========== 视图状态 ==========
+var currentView = 'national';
+var scale = 1, offsetX = 0, offsetY = 0;
+var hoveredRegion = null, selectedRegion = null;
+var isDragging = false, lastX = 0, lastY = 0;
+var currentPhase = 0;
+var panelTab = 'detail';
+
+// ========== 时间轴阶段描述 ==========
+var PHASE_NAMES = ['宋末齊初','齊末梁初','梁朝盛世','侯景之亂'];
+var PHASE_DESCS = [
+    '宋末齊初：蕭衍據雍州，與荆州結盟，蓄勢待發（約479-502年）',
+    '齊末梁初：蕭衍起兵東下，攻陷建康，稱帝開國（約502-520年）',
+    '梁朝盛世：天監改制，建康繁華，絲路通商（約520-548年）',
+    '侯景之亂：太清二年，侯景起兵反叛，攻陷台城（約548-555年）'
+];
+
+// ========== 路径数据 ==========
+var ROUTES = {
+    0: [{from:'yongzhou', to:'jingzhou', color:'#5c3d1f', style:'dashed', desc:'蕭衍據雍州，與荆州結盟'}],
+    1: [{from:'yongzhou', to:'yangzhou', color:'#5c3d1f', style:'solid', desc:'蕭衍起兵，沿江東下攻建康'}],
+    2: [{from:'yangzhou', to:'guangzhou', color:'#8b6540', style:'dashed', desc:'海上絲路商路'},
+         {from:'yangzhou', to:'yizhou', color:'#8b6540', style:'dashed', desc:'揚益貿易通道'}],
+    3: [{from:'yongzhou', to:'yangzhou', color:'#c23a2a', style:'solid', desc:'侯景起兵南下，攻陷台城'}]
+};
+
+// 阶段高亮州配置
+var PHASE_HIGHLIGHT = {
+    0: {states: ['yongzhou','jingzhou'], pulseColor: '#d4a853', glowColor: 'rgba(212,168,83,.35)' },
+    1: {states: ['yangzhou','nanxuzhou'], pulseColor: '#d4a853', glowColor: 'rgba(212,168,83,.35)' },
+    2: {states: ['yangzhou','guangzhou','yizhou'], pulseColor: '#d4a853', glowColor: 'rgba(212,168,83,.35)' },
+    3: { states: ['yongzhou','yangzhou','jingzhou'], pulseColor: '#c23a2a', glowColor: 'rgba(194,58,42,.35)' }
+};
+
+// ========== 全国地图数据（完整来自v4） ==========
+var nationalBoundary = [
+    [0.28,0.15],[0.32,0.10],[0.38,0.07],[0.45,0.05],[0.52,0.04],[0.60,0.04],[0.68,0.05],[0.75,0.06],[0.82,0.08],[0.88,0.11],[0.92,0.15],[0.94,0.20],[0.95,0.26],[0.95,0.33],[0.94,0.40],[0.92,0.48],[0.90,0.55],[0.87,0.62],[0.84,0.68],[0.80,0.75],[0.75,0.80],[0.70,0.85],[0.65,0.88],[0.60,0.90],[0.55,0.88],[0.50,0.84],[0.46,0.78],[0.42,0.72],[0.39,0.65],[0.36,0.58],[0.33,0.50],[0.30,0.42],[0.28,0.35],[0.27,0.28],[0.27,0.22],[0.27,0.18]
+];
+var nationalRivers = [
+    {name:'長江',pts:[[0.25,0.26],[0.30,0.25],[0.38,0.24],[0.46,0.23],[0.54,0.23],[0.62,0.23],[0.70,0.23],[0.78,0.22],[0.86,0.22],[0.92,0.22]],w:5},
+    {name:'漢水',pts:[[0.56,0.23],[0.55,0.28],[0.54,0.34],[0.53,0.38],[0.52,0.42]],w:2.5},
+    {name:'湘江',pts:[[0.62,0.52],[0.61,0.58],[0.60,0.64],[0.59,0.70],[0.58,0.75]],w:2.5},
+    {name:'贛江',pts:[[0.72,0.48],[0.71,0.54],[0.70,0.60],[0.69,0.66],[0.68,0.72]],w:2.5},
+    {name:'珠江',pts:[[0.58,0.78],[0.62,0.82],[0.66,0.85],[0.70,0.87],[0.74,0.88]],w:2.5},
+    {name:'岷江',pts:[[0.36,0.46],[0.38,0.50],[0.40,0.52]],w:2},
+    {name:'錢塘江',pts:[[0.84,0.42],[0.85,0.46],[0.86,0.50]],w:2.5}
+];
+var nationalMountains = [
+    {name:'秦嶺',pts:[[0.38,0.24],[0.42,0.22],[0.46,0.22],[0.50,0.23],[0.53,0.24]]},
+    {name:'南嶺',pts:[[0.62,0.70],[0.66,0.72],[0.70,0.73],[0.74,0.72]]},
+    {name:'武夷山',pts:[[0.78,0.50],[0.80,0.55],[0.82,0.60],[0.83,0.65]]}
+];
+var nationalLakes = [
+    {name:'太湖',x:0.82,y:0.36,r:12},
+    {name:'洞庭湖',x:0.62,y:0.52,r:14},
+    {name:'鄱陽湖',x:0.72,y:0.48,r:13}
+];
+var nationalStates = [
+    {id:'yangzhou',name:'揚州',capital:'建康',x:0.78,y:0.30,type:'capital',color:'#c23a2a',
+     desc:'京畿所在，南朝政治、经济、文化中心。治建康（今南京），領郡十，領縣八十。戶一十四萬三千二百九十六，口一百四十五萬五千六百八十五。',
+     detail:'扬州是南朝最核心的州，建康城为六朝都城。梁武帝时期建康城人口逾百万，为当时世界最大城市。',
+     quote:'扬州京辇神皋，望实隆重。',source:'《宋书·州郡志》',
+     tags:['capital','economic','cultural'],
+     counties:['丹楊尹：建康、秣陵、丹楊、江寧、永世、湖熟、句容（領縣八，戶四萬一千一十）','會稽太守：山陰、永興、上虞、余姚、剡、諸暨、始寧、句章、鄞、𬪍（領縣十，戶五萬二千二百二十八）','吳郡太守：吳、婁、嘉興、海虞、海鹽、鹽官、錢唐、富陽、新城、建德、桐廬、壽昌（領縣十二，戶五萬四百八十八）','吳興太守：烏程、東遷、武康、長城、原鄉、故鄣、安吉、余杭、臨安、於潛（領縣十，戶四萬九千六百九）','淮南太守：于湖、當塗、繁昌、襄垣、無湖、定陵、逡道（領縣六，戶五千三百六十二）','宣城太守：宛陵、廣德、懷安、寧國、宣城、安吳、涇、臨城、廣陽、石城（領縣十，戶一萬一百二十）','東陽太守：長山、太末、烏傷、永康、信安、吳寧、豐安、定陽、遂昌（領縣九，戶一萬六千二十二）','臨海太守：章安、臨海、始豐、寧海、樂安（領縣五，戶三千九百六十一）','永嘉太守：永寧、安固、松陽、樂成、橫陽（領縣五，戶六千二百五十）','新安太守：始新、遂安、歙、海寧、黟（領縣五，戶一萬二千五十八）'],
+     phaseEvents:{0:'宋末，建康為劉宋/南齊首都，宮城台城仍在擴建中。',1:'天監元年（502），蕭衍稱帝，定都建康，改元天監。',2:'天監年間，建康城人口逾百萬，成為世界最大城市。',3:'太清二年（548），侯景攻陷台城，梁武帝被困餓死，建康遭焚毀。'}},
+    {id:'nanxuzhou',name:'南徐州',capital:'京口',x:0.80,y:0.26,type:'military',color:'#b8342a',
+     desc:'治京口（今鎮江），为建康东北门户，北府兵发源地。領郡十七，縣六十三，戶七萬二千四百七十二，口四十二萬六百四十。',
+     detail:'京口地当长江与京杭大运河交汇处，是建康的东大门。东晋谢玄在此组建北府兵。',
+     quote:'京口酒可饮，箕可用，兵可使。',source:'《世说新语》',
+     tags:['military','border'],
+     counties:['南東海太守：郯、丹徒、武進、朐、利城（領縣六，戶五千三百四十二）','南琅邪太守：臨沂、江乘（領縣二，戶二千七百八十九）','晉陵太守：晉陵、延陵、無錫、南沙、曲阿、暨陽（領縣六，戶一萬五千三百八十二）','義興太守：陽羡、臨津、義鄉、國山、綏安（領縣五，戶一萬三千四百九十六）','南蘭陵太守：蘭陵、承（領縣二，戶一千五百九十三）','南東莞太守：莒、東莞、姑幕（領縣三，戶一千四百二十四）','臨淮太守：海西、射陽、廣陵、淮浦、淮陰、東陽、長樂（領縣七，戶三千七百一十一）','淮陵太守：司吾、徐、陽樂（領縣三，戶一千九百五）','南彭城太守：呂、武原、傅陽、蕃、薛、開陽、杼秋、洨、下邳、北陵、僮（領縣十一，戶一萬一千七百五十八）','共領郡十七，縣六十三，戶七萬二千四百七十二'],
+     phaseEvents:{0:'京口為北府兵起源地，軍事地位顯赫。',1:'南齊末，蕭衍自雍州起兵，京口諸將響應，共討東昏侯。',2:'天監年間，京口為建康東北大門，商旅往來頻繁。',3:'侯景之亂中，京口一度被圍，後得援軍解圍。'}},
+    {id:'dongyangzhou',name:'東揚州',capital:'會稽',x:0.84,y:0.36,type:'economic',color:'#5a8a6a',
+     desc:'治会稽（今绍兴），江南经济富庶之地，士族庄园经济发达。',
+     detail:'会稽郡为秦汉旧郡，南朝时士族庄园遍布。辖境包括今浙江大部。',
+     quote:'会稽山阴，士民殷富。',source:'《宋书》',
+     tags:['economic','cultural'],
+     counties:['会稽郡：山阴、永兴、上虞、余姚','东阳郡：长山、太末','新安郡：始新、黟、歙','永嘉郡：永宁、安固、松阳'],
+     phaseEvents:{0:'會稽士族莊園經濟發達，為江南富庶之地。',1:'天監年間，東揚州併入揚州，後又分出。',2:'梁盛時期，會稽為文化中心，王羲之故地，書風猶盛。',3:'侯景之亂後，東揚州成為東土諸侯割據之地。'}},
+    {id:'jiangzhou',name:'江州',capital:'尋陽',x:0.70,y:0.40,type:'economic',color:'#5a8a6a',
+     desc:'刺史，晋惠帝太康元年，分扬州之豫章、鄱阳、庐陵、临川、南康、建安、晋安，荆州之武昌、桂阳、安成十郡为江州。初治豫章，成帝咸康六年，移治寻阳。领郡九。县六十五。户五万二千三十三，口三十七万七千一百四十七。',
+     detail:'江州控扼长江中游，商贾云集。陶渊明曾任彭泽令，即在此州境内。',
+     quote:'江州据中流之要，为扬荆之喉舌。',source:'《南齐书·州郡志》',
+     tags:['economic','military'],
+     counties:['寻阳太守：柴桑、松滋（领县三，户二千七百二十，口一万六千八）','豫章太守：南昌、新淦、丰城、建城、望蔡、吴平、永修、建昌、豫宁、康乐、新吴、艾（领县十二，户一万六千一百三十九，口一十二万二千五百七十三）','鄱阳太守：广晋、鄱阳、余干、上饶、葛阳、乐安（领县六，户三千二百四十二，口一万九百五十）','临川内史：临汝、西丰、新建、永城、宜黄、南城、南丰、东兴、安浦（领县九，户八千九百八十三，口六万四千八百五）','庐陵太守：石阳、西昌、东昌、吉阳、巳丘、兴平、阳丰、高昌、遂兴（领县九，户四千四百五十五，口三万一千二百七十一）','安城太守：平都、新喻、宜阳、永新、安复、萍乡、广兴（领县七，户六千一百一十六，口五万三百二十三）','南康公相：赣、宁都、雩都、平固、南康、陂阳、南野、虔化（领县七，户四千四百九十三，口三万四千六百八十四）','建安太守：吴兴、将乐、邵武、建阳、绥成、沙村（领县七，户三千四十二，口一万七千六百八十六）','晋安太守：候官、原丰、晋安、罗江、温麻（领县五，户二千八百四十三，口一万九千八百三十八）','南新蔡太守：苞信、慎、宋、阳唐左（领县四，户一千七百三十，口八千八百四十八）'],
+     phaseEvents:{0:'尋陽為揚州與荆州間的交通樞紐。',1:'蕭衍起兵沿長江東下，經過江州，尋陽歸附。',2:'天監年間，江州商賈雲集，為長江中游經濟中心。',3:'侯景之亂時，江州刺史蕭大心舉棋不定，後被侯景攻陷。'}},
+    {id:'jingzhou',name:'荆州',capital:'江陵',x:0.62,y:0.43,type:'military',color:'#b8342a',
+     desc:'刺史，汉治武陵汉寿，魏、晋治江陵，此后遂治江陵。宋初领郡三十一，后分南阳、顺阳、襄阳、新野、竟陵为雍州，湘川十郡为湘州，江夏、武阳属郢州，随郡、义阳属司州。凡余十一郡。今领郡十二，县四十八。户六万五千六百四。去京都水三千三百八十。',
+     detail:'荆州是南朝西大门，与扬州并称"江左大镇"。桓温、刘裕皆起家于此，治所历经汉寿、武昌、沔阳、襄阳等地，最终定治江陵。',
+     quote:'荆州据上流之势，兵强财富，地广人众。',source:'《宋书·州郡志》',
+     tags:['military','economic'],
+     counties:['南郡太守：江陵、华容、当阳、临沮、编县、枝江（领县六，户一万四千五百四十四，口七万五千八十七）','南平内史：江安、孱陵、作唐、安南（领县四，户一万二千三百九十二，口四万五千四十九）','天门太守：澧阳、临澧、零阳、溇中（领县四，户三千一百九十五）','宜都太守：夷道、很山、宜昌、夷陵（领县四，户一千八百四十三，口三万四千二百二十）','巴东公相：鱼复、朐䏰、新浦、南浦、汉丰、巴渠、黾阳（领县七，户一万三千七百九十五，口四万五千二百三十七）','汶阳太守：僮阳、沮阳、高安（领县三，户九百五十八，口四千九百一十四）','南义阳太守：厥西、平氏（领县二，户一千六百七，口九千七百四十一）','新兴太守：定襄、广牧、新丰（领县三，户二千三百一，口九千五百八十四）','南河东太守：闻喜、永安、松滋、谯县（领县四，户二千四百二十三，口一万四百八十七）','建平太守：巫、秭归、归乡、北井、泰昌、沙渠、新乡（领县七，户一千三百二十九，口二万八百一十四）','永宁太守：长宁、上黄（领县二，户一千一百五十七，口四千二百七十四）','武宁太守：乐乡、长林（领县二，户九百五十八，口四千九百一十四）'],
+     phaseEvents:{0:'荆州據上流之勢，蕭衍在雍州時與荆州結盟。',1:'蕭穎胄等荆州將領響應蕭衍起兵，共舉義旗。',2:'梁朝盛世時，江陵為西部文化中心，昭明太子曾鎮守。',3:'承聖元年（552），蕭繹於江陵稱帝，是為梁元帝。'}},
+    {id:'yingzhou',name:'郢州',capital:'江夏',x:0.65,y:0.46,type:'military',color:'#b8342a',
+     desc:'刺史，孝武孝建元年，分荆州之江夏、竟陵、随、武陵、天门，湘州之巴陵，江州之武昌，豫州之西阳立。天门后还荆。领郡六。县三十九。户二万九千四百六十九，口十五万八千五百八十七。去京都水二千一百。',
+     detail:'郢州分荆州而置，江夏位于长江与汉水交汇处，控扼江汉平原。',
+     quote:'郢州控带江汉，西接荆湘，东连扬越。',source:'《南齐书》',
+     tags:['military','border'],
+     counties:['江夏太守：汝南、沙羡、沌阳、孝昌、惠怀、沙阳、滠阳、蒲圻（领县八，户五千七十二，口二万三千八百一十）','竟陵太守：苌寿、竟陵、新市、霄城、新阳、云杜（领县六，户八千五百九十一，口四万四千三百七十五）','武陵太守：临沅、龙阳、汉寿、沅南、迁陵、辰阳、舞阳、酉阳、黚阳、沅陵（领县十，户五千九十，口三万七千五百五十五）','巴陵太守：巴陵、下隽、监利、州陵（领县四，户五千一百八十七，口二万五千三百一十六）','武昌太守：武昌、阳新、鄂（领县三，户二千五百四十六，口一万一千四百一十一）','西阳太守：西阳、西陵、孝宁、蕲阳、义安、蕲水左、东安左、建宁左、希水左、阳城左（领县十，户二千九百八十三，口一万六千一百二十）'],
+     phaseEvents:{0:'郢州控帶江漢，為軍事要塞。',1:'蕭衍起兵東下，郢州刺史張沖拒守，後城陷。',2:'天監年間，郢州為長江中游水軍基地。',3:'侯景之亂後，郢州為西魏所據。'}},
+    {id:'xiangzhou',name:'湘州',capital:'長沙',x:0.63,y:0.53,type:'economic',color:'#5a8a6a',
+     desc:'刺史，晋怀帝永嘉元年，分荆州之长沙、衡阳、湘东、邵陵、零陵、营阳、建昌，江州之桂阳八郡立。领郡十，县六十二。户四万五千八十九，口三十五万七千五百七十二。去京都水三千三百。',
+     detail:'湘州辖今湖南大部，为南朝粮食和木材重要产地。治所屡经废立，建昌郡后省，巴陵郡度郢州。',
+     quote:'湘州土沃民丰，谷粮充足。',source:'《宋书》',
+     tags:['economic'],
+     counties:['长沙内史：临湘、醴陵、浏阳、吴昌、罗县、攸县、建宁（领县七，户五千六百八十四，口四万六千二百一十三）','衡阳内史：湘西、湘南、益阳、湘乡、新康、重安、衡山（领县七，户五千七百四十六，口二万八千九百九十一）','桂阳太守：郴、耒阳、南平、临武、汝城、晋宁（领县六，户二千二百一十九，口二万二千一百九十二）','零陵内史：泉陵、洮阳、零陵、祁阳、应阳、观阳、永昌（领县七，户三千八百二十八，口六万四千八百二十八）','营阳太守：营浦、营道、舂陵、泠道（领县四，户一千六百八，口二万九百二十七）','湘东太守：临烝、新宁、茶陵、湘阴、阴山（领县五，户一千三百九十六，口一万七千四百五十）','邵陵太守：邵陵、武刚、建兴、高平、都梁、邵阳、扶县、广兴（领县八，户一千九百一十六，口二万五千五百六十五。广兴郡：曲江、桂阳、阳山、贞阳、含洭、始兴、中宿，户一万一千七百五十六，口七万六千三百二十八）','临庆内史：临贺、冯乘、富川、封阳、兴安、谢沐、宁新、开建、抚宁（领县九，户三千七百一十五，口三万一千五百八十七）','始建内史：始安、熙平、永丰、荔浦、平乐、建陵、乐化左（领县七，户三千八百三十，口二万二千四百九十）'],
+     phaseEvents:{0:'湘州土沃民豐，為江南南部糧食產區。',1:'蕭衍起兵後，湘州諸郡相繼歸附。',2:'天監年間，湘州穀糧輸往建康，為後方糧倉。',3:'侯景之亂後，湘東王蕭繹據湘州起兵討侯景。'}},
+    {id:'yongzhou',name:'雍州',capital:'襄陽',x:0.58,y:0.36,type:'military',color:'#b8342a',
+     desc:'刺史，晋江左立。胡亡氐乱，雍、秦流民多南出樊、沔，晋孝武始于襄阳侨立雍州。宋文帝元嘉二十六年，割荆州之襄阳、南阳、新野、顺阳、随五郡为雍州。今领郡十七，县六十。户三万八千九百七十五，口十六万七千四百六十七。去京都水四千四百，陆二千一百。',
+     detail:'襄阳为南朝北方第一重镇，梁武帝萧衍即起家于此。雍州侨郡县众多，大明中土断后始有实土。',
+     quote:'襄阳跨连荆豫，控扼南北，为江左之咽喉。',source:'《南齐书·州郡志》',
+     tags:['military','border'],
+     counties:['襄阳公相：襄阳、中庐、巴阜（领县三，户四千二十四，口一万六千四百九十六）','南阳太守：宛、涅阳、云阳、冠军、郦、舞阴、许昌（领县七，户四千七百二十七，口三万八千一百三十二）','新野太守：新野、山都、池阳、穰、交木（领县五，户四千二百三十五，口一万四千七百九十三）','顺阳太守：南乡、槐里、顺阳、清水、朝阳、丹水、郑县（领县七，户四千一百六十三，口二万三千一百六十三）','京兆太守：杜、邓、新丰（领县三，户二千三百七，口九千二百二十三）','始平太守：武当、始平、武功、平阳（领县四，户二千七百九十七，口五千五百十二）','扶风太守：筑阳、郿、泛阳（领县三，户二千一百五十七，口七千二百九十）','南上洛太守：上洛、商县（领县二，户一百四十四，口四百七十七）','河南太守：河南、新城、河阴、棘阳、襄乡（领县五，户三千五百四十一，口一万三千四百七十）','广平太守：广平、酂、比阳、阴（领县四，户二千六百二十七，口六千二百九十三）','义成太守：义成、万年（领县二，户一千五百二十一，口五千一百一）','冯翊太守：鄀、高陆、南天水：华阴、西、略阳、河阳（领县三，户二千七十八，口五千三百二十一）','南天水太守：华阴、西、略阳、河阳（领县四，户六百八十七，口三千一百二十二）','建昌太守：永兴、安宁（领县二，户七百三十二，口四千二百六十四）','华山太守：华山、蓝田、上黄（领县三，户一千三百九十九，口五千三百三十二）','北河南太守：新蔡、汝阴、苞信、上蔡、固始、缑氏、新安、洛阳（领县八）','弘农太守：邯郸、圉、卢氏（领县三）'],
+     phaseEvents:{0:'蕭衍為雍州刺史，據襄陽積蓄力量，等待時機。',1:'中興二年（502），蕭衍自襄陽起兵，沿漢水東下，攻入建康。',2:'天監年間，襄陽為北方防線重鎮，修築城池，屯駐重兵。',3:'太清二年（548），侯景自壽陽起兵，先攻陷譙州，後渡淮南下。'}},
+    {id:'yizhou',name:'益州',capital:'成都',x:0.42,y:0.46,type:'economic',color:'#5a8a6a',
+     desc:'治成都（今成都），天府之国，南朝大后方。',
+     detail:'益州辖今四川盆地，蜀锦、井盐为重要物产。',
+     quote:'益州险塞，沃野千里，天府之土。',source:'《三国志·诸葛亮传》',
+     tags:['economic','border'],
+     counties:['蜀郡：成都、郫县、繁','犍为郡：僰道、南安','巴西郡：阆中、西充国','梓潼郡：涪、梓潼'],
+     phaseEvents:{0:'益州天府之國，物產豐饒，為南朝大後方。',1:'天監年間，益州獻蜀錦於建康，為皇室貢品。',2:'梁朝盛世，成都繁華，與建康、廣州形成貿易三角。',3:'侯景之亂時，益州刺史蕭紀擁兵自重，後起兵東下。'}},
+    {id:'liangzhou',name:'梁州',capital:'南鄭',x:0.48,y:0.38,type:'border',color:'#8b6540',
+     desc:'刺史，禹贡旧州。魏元帝景元四年平蜀，复立梁州，治汉中南郑。今领郡多，治南郑。',
+     detail:'梁州为秦岭以南边防要地，辖境广袤，包含汉中、魏兴、新城、上庸、晋寿、华阳等郡。多为侨置与实土并存。',
+     quote:'梁州据汉中之地，当秦岭之险。',source:'《华阳国志》',
+     tags:['border','military'],
+     counties:['汉中太守：南郑、城固、沔阳、西乡（领县四，户一千七百八十六，口一万三百三十四）','魏兴太守：西城、郧乡、锡县、广城、兴晋、旬阳、上庸、长乐、广昌、安晋、延寿、宣汉（领县十二，去州一千二百，去京都水六千七百）','新城太守：房陵、绥阳、昌魏、祁乡、阆阳、乐平（领县六，户一千六百六十八，口七千五百九十四）','上庸太守：上庸、安富、北巫、微阳、武陵、新安、吉阳（领县七，户四千五百五十四，口二万六百五十三）','晋寿太守：晋寿、白水、邵欢、兴安（领县四，去州陆一千二百，去京都水一万）','华阳太守：华阳、兴宋、宕渠、嘉昌（领县四，户二千五百六十一，口万五千四百九十四）','新巴太守：新安、晋城、晋安（领县三，户三百九十三，口二千七百四十九）','北巴西太守：阆中、安汉、南国、西国、平周（领县五，去州一千四百，去京都水九千九百）','北阴平太守：阴平、平武（领县二，户五百六，口二千一百二十四）','南阴平太守：阴平、怀旧（领县二，户四百七）','巴渠太守：宣汉、始兴、巴渠、东关、始安、下蒲、晋兴（领县七，户五百，口二千一百八十三）','怀安太守：怀安、义存（领县二，户四百七，口二千三百六十六）','宋熙太守：兴乐、归安、宋安、元寿、嘉昌（领县五，户一千三百八十五，口三千一百二十八）','白水太守：新巴、汉德、晋寿、益昌、兴安、平周（领县六，户六百五）','南上洛太守：上洛、商县、流民、丰阳、渠阳、义县（领县六）','北上洛太守：北上洛、农阳、流民、阳亭、拒阳、商县、西丰（领县七，户二百五十四）','安康太守：安康、宁都（领县二）','南宕渠太守：宕渠、汉安、宣汉、宋康（领县四）','怀汉太守：永丰、绥来、预德（领县三，户四百一十九）'],
+     phaseEvents:{0:'梁州據漢中之地，當秦嶺之險，為北方防線。',1:'天監年間，梁州屢遭北魏侵擾，邊防緊張。',2:'天監四年（505），梁武帝命蕭宏北伐，梁州為後方基地。',3:'侯景之亂後，梁州為西魏所佔。'}},
+    {id:'guangzhou',name:'廣州',capital:'番禺',x:0.68,y:0.76,type:'economic',color:'#5a8a6a',
+     desc:'治番禺（今广州），岭南经济中心，海上丝绸之路起点。',
+     detail:'番禺港繁忙，阿拉伯、波斯商船往来不绝。',
+     quote:'广州包带山海，珍宝所聚。',source:'《宋书》',
+     tags:['economic','border'],
+     counties:['南海郡：番禺、四会、博罗','苍梧郡：广信、封阳','郁林郡：布山','高凉郡：安宁、高凉'],
+     phaseEvents:{0:'廣州為海上絲路起點，與海外諸國通商。',1:'天監年間，廣州刺史率船隊遠航，加強海外貿易。',2:'梁朝盛世，番禺港萬商雲集，波斯、阿拉伯商船絡繹不絕。',3:'侯景之亂時，廣州刺史蕭勃據嶺南自立，後歸附陳霸先。'}},
+    {id:'jiaozhou',name:'交州',capital:'龍編',x:0.55,y:0.83,type:'border',color:'#8b6540',
+     desc:'治龙编（今越南北宁），南朝最南端领土。',
+     detail:'交州辖今越南北部，特产犀角、象牙、翡翠等珍宝。',
+     quote:'交州南尽海表，北据五岭。',source:'《华阳国志》',
+     tags:['border'],
+     counties:['交趾郡：龙编、羸娄','九真郡：胥浦、移风','日南郡：西卷、比景'],
+     phaseEvents:{0:'交州南盡海表，為南朝最南端領土，產犀角象牙。',1:'天監年間，交州遣使朝貢，獻海外珍寶。',2:'梁朝盛世，交州與廣州形成嶺南雙子經濟圈。',3:'侯景之亂後，交州地方豪族割據，實際脫離中央控制。'}},
+    {id:'yuzhou',name:'豫州',capital:'壽陽',x:0.72,y:0.28,type:'military',color:'#b8342a',
+     desc:'刺史，后汉治谯，魏治汝南安成，晋平吴后治陈国。永初郡国、何、徐寄治睢阳，而郡县在淮西。领郡十，县四十三。户二万二千九百一十九，口一十五万八百三十九。',
+     detail:'豫州为南朝北方前线，淝水之战即发生于此州境内。',
+     quote:'寿阳控扼淮水，为南北必争之地。',source:'《宋书》',
+     tags:['military','border'],
+     counties:['汝南太守：上蔡、平乐、北新息、慎阳、安成、南新息、朗陵、阳安、西平、瞿阳、安阳（领县十一，户一万一千二百九十一，口八万九千三百四十九）','新蔡太守：鲖阳、固始、新蔡、苞信（领县四，户二千七百七十四，口一万九千八百八十）','谯郡太守：蒙、蕲、宁陵、魏、襄邑、长垣（领县六，户一千四百二十四，口七千四百四）','梁郡太守：下邑、砀（领县二，户九百六十八，口五千五百）','陈郡太守：项城、西华、父阳、长平（领县四，户六百九十三，口四千一百一十三）','南顿太守：南顿、和城（领县二，户五百二十六，口二千三百六十五）','颍川太守：邵陵、临颍、曲阳（领县三，户六百四十九，口二千五百七十九）','汝阳太守：汝阳、武津（领县二，户九百四十一，口四千四百九十五）','汝阴太守：汝阴、宋、宋城、楼烦（领县四，户二千七百四十九，口一万四千三百三十五）','陈留太守：浚仪、小黄、白马、雝丘（领县四，户百九十六，口二千四百一十三）'],
+     phaseEvents:{0:'豫州為淮河中游軍事重鎮，南北對峙前線。',1:'南齊末，豫州歸附蕭衍，為其提供軍糧和兵員。',2:'天監年間，壽陽為北伐前線基地，修築城防。',3:'太清元年（547），侯景自東魏降梁，駐守壽陽，後起兵反叛。'}},
+    {id:'nanyuzhou',name:'南豫州',capital:'姑孰',x:0.75,y:0.32,type:'military',color:'#b8342a',
+     desc:'刺史，晋江左侨立豫州，治所屡迁。永初三年，分淮东为南豫州，治历阳。孝武大明五年，割扬州之淮南、宣城又属焉，徙治姑孰。徐志领郡十三，县六十一，户三万七千六百二，口二十一万九千五百。今领郡九，县九十一。',
+     detail:'南豫州分豫州而置，姑孰为建康西南门户。',
+     quote:'南豫州近畿要地，屏藩建康。',source:'《宋书·州郡志》',
+     tags:['military'],
+     counties:['历阳太守：历阳、乌江、龙亢、雍丘、酂（领县五，户三千一百五十六，口一万九千四百七十）','南谯太守：山桑、谯、铚、扶阳、蕲、城父（领县六，户四千四百三十二，口二万二千三百五十八）','庐江太守：灊、舒、始新（领县三，户一千九百九，口一万一千九百九十七）','南汝阴太守：汝阴、慎、宋、阳夏、安阳（领县五，户二千七百一，口一万九千五百八十五）','南梁太守：睢阳、蒙、虞、谷熟、陈、义宁、新汲、崇义、宁陵（领县九，户六千二百一十二，口四万二千七百五十四）','晋熙太守：怀宁、新冶、阴安、南楼、太湖左（领县五，户一千五百二十一，口七千四百九十七）','弋阳太守：期思、弋阳、安丰、乐安、茹由（领县六，户三千二百七十五，口二万四千二百六十二）','安丰太守：安丰、松滋（领县二）','汝南太守：上蔡、平舆、北新息、慎阳、安成、南新息、朗陵、阳安、西平、瞿阳、安阳（领县十一）','新蔡太守：鲖阳、固始、新蔡、苞信（领县四，户二千七百七十四，口一万九千八百八十）','谯郡太守：蒙、蕲、宁陵、魏、襄邑、长垣（领县六，户一千四百二十四，口七千四百四）','梁郡太守：下邑、砀（领县二，户九百六十八，口五千五百）','陈郡太守：项城、西华、父阳、长平（领县四，户六百九十三，口四千一百一十三）','南顿太守：南顿、和城（领县二，户五百二十六，口二千三百六十五）','颍川太守：邵陵、临颍、曲阳（领县三，户六百四十九，口二千五百七十九）','汝阳太守：汝阳、武津（领县二，户九百四十一，口四千四百九十五）','汝阴太守：汝阴、宋、宋城、楼烦（领县四，户二千七百四十九，口一万四千三百三十五）','陈留太守：浚仪、小黄、白马、雝丘（领县四，户百九十六，口二千四百一十三）','南陈左郡：蓼城左县、赤官左县（孝建二年以蛮户复立，领县二）','边城左郡：雩娄、开化、史水、边城（领县四，户四百一十七，口二千四百七十九）','光城左郡：乐安、茹由、光地（疑大明中分弋阳所立）'],
+     phaseEvents:{0:'南豫州為建康西南屏障，姑孰為軍事要地。',1:'蕭衍起兵時，南豫州響應義師，為東進提供通道。',2:'天監年間，南豫州併入豫州，後又分出。',3:'侯景之亂中，姑孰為侯景軍必經之地，遭兵燹之災。'}},
+    {id:'xuzhou',name:'徐州',capital:'鐘離',x:0.74,y:0.24,type:'military',color:'#b8342a',
+     desc:'刺史，后汉治东海郯县，魏、晋、宋治彭城。明帝世，淮北没寇，侨立徐州，治钟离。泰豫元年，移治东海昫。旧领郡十二，县三十四。户二万三千四百八十五，口十七万五千九百六十七。',
+     detail:'徐州原在江北，治彭城。宋太宗初，北魏南侵，青、冀、徐、兖及豫州淮北并皆不守。于是于钟离置徐州，淮阴为北兖。徐州从此成为淮南防线的重要一环。',
+     quote:'自淮以北，化成虏庭。于是于钟离置徐州。',source:'《宋书·州郡志》',
+     tags:['military','border'],
+     counties:['彭城太守：彭城、吕、蕃、薛、留（领县五，户八千六百二十七，口四万一千二百三十一）','沛郡太守：萧、相、沛（领县三，户五千二百九，口二万五千一百七十）','下邳太守：下邳、良成、僮（领县三，户三千九十九，口一万六千八十八）','兰陵太守：昌虑、承、合乡（领县三，户三千一百六十四，口一万四千五百九十七）','东海太守：襄贲、赣榆（领县二，户二千四百一十一，口一万三千九百四十一）','东莞太守：莒、诸、东莞（领县三，户八百八十七，口七千三百二十）','东安太守：庵、新泰、发干（领县三，户一千二百八十五，口一万七百五十五）','琅邪太守：费、即丘（领县二，户一千八百一十八，口八千二百四十三）','淮阳太守：甬城、晋宁、宿预、上党（领县四，户二千八百五十五，口一万五千三百六十三）','阳平太守：馆陶、阳平、濮阳（领县三，户一千七百二十五，口一万三千三百三十）','济阴太守：睢陵、定陶、顿丘（领县三，户二千三百五，口一万一千九百二十八）','北济阴太守：城武、丰、离狐（领县三，户九百二十七，口三千八百十）','钟离太守：燕、朝歌、乐平（领县三，户三千二百七十二，口一万七千八百三十二）','马头太守：虞、零、济阳（领县三，户一千三百三十二，口一万二千三百一十）','新昌太守：顿丘、榖孰、赞（领县三）'],
+     phaseEvents:{0:'宋初徐州治彭城，太宗失淮北後南遷治鐘離。',1:'南齊末，徐州響應蕭衍起兵。',2:'天監年間，徐州為淮河防線重鎮。',3:'太清二年（548），侯景自壽陽南下，徐州首當其衝。'}},
+    {id:'nanyanzhou',name:'南兗州',capital:'淮陰',x:0.73,y:0.26,type:'military',color:'#b8342a',
+     desc:'刺史，中原乱，北州流民多南渡，晋成帝立南兖州，寄治京口。文帝元嘉八年，始割江淮间为境，治广陵。徐志领郡九，县三十九，户三万一千一百一十五，口十五万九千三百六十二。宋末领郡十一，县四十四。去京都水二百五十，陆一百八十。',
+     detail:'南兖州原在江北，元嘉八年以江北为南兖州。太宗失淮北后，于淮阴置北兖，后改称南兖州。',
+     quote:'文帝元嘉八年，更以江北为南兖州。',source:'《宋书·州郡志》',
+     tags:['military','border'],
+     counties:['广陵太守：广陵、海陵、高邮、江都（领县四，户七千七百四十四，口四万五千六百一十三）','海陵太守：建陵、临江、如皋、宁海、蒲涛、临泽（领县五，户三千六百二十六，口二万一千六百六十）','山阳太守：山阳、盐城、东城、左乡（领县四，户二千八百一十四，口二万二千四百七十）','盱眙太守：考城、阳城、直渎、信都、睢陵（领县五，户一千五百一十八，口六千八百二十五）','秦郡太守：秦、义成、尉氏、怀德（领县四，户三千三百三十三，口一万五千二百九十六）','南沛太守：萧、相、沛（领县三，户一千一百九，口一万二千九百七十）','新平太守：江阳、海安（领县二）','北淮阳太守：晋宁、宿预、甬城（领县三）','北济阴太守：广平、定陶、阳平、上党、冤句、馆陶（领县六）','北下邳太守：潼、下邳、宁城（领县三）','东莞太守：莒、诸、东莞、柏人（领县四）'],
+     phaseEvents:{0:'南兗州在江北時為南北交通要衝，失淮北後南遷。',1:'蕭衍起兵，南兗州諸將響應。',2:'天監年間，淮陰為淮河南岸重要軍事據點。',3:'侯景之亂時，南兗州遭兵燹。'}},
+    {id:'sizhou',name:'司州',capital:'義陽',x:0.60,y:0.38,type:'military',color:'#b8342a',
+     desc:'刺史，汉之司隶校尉也。晋江左以来，沦没戎寇。武帝北平关、洛，河南底定，置司州刺史，冶虎牢。少帝景平初，司州复没北虏。明帝复于南豫州之义阳郡立司州，渐成实土焉。领郡四，县二十。去京都水二千七百，陆一千七百。',
+     detail:'司州从荆州分出，义阳位于荆豫之间，为南北交通要冲。后因北魏进攻，司州多次易手。',
+     quote:'分荆为司，以义阳为治所。',source:'《宋书·州郡志》',
+     tags:['military','border'],
+     counties:['义阳太守：平阳、𫑡、钟武、宝城、义阳、平春、环水（领县七，户八千三十一，口四万一千五百九十七）','随阳太守：随阳、水阳、关西、西平林（领县四，户四千六百）','安陆太守：安陆、江夏曲陵（领县二，户六千四十三，口二万五千八十四）','南汝南太守：平舆、北新息、真阳、安城、南新息、安阳、临汝（领县七）'],
+     phaseEvents:{0:'宋世分荆為司，義陽為南北交通要衝。',1:'蕭衍起兵後，司州歸附梁朝。',2:'天監年間，司州為北方防線之一。',3:'侯景之亂後，司州陷入混亂。'}},
+    {id:'qinzhou',name:'秦州',capital:'南鄭附近',x:0.46,y:0.35,type:'border',color:'#8b6540',
+     desc:'刺史，晋武帝太始五年，分陇右五郡及凉州金城、梁州阴平并七郡为秦州。何志晋孝武复立，寄治襄阳，安帝世在汉中南郑。领郡十四。县四十二。户八千七百三十二，口四万八百八十八。',
+     detail:'秦州由梁州分出，辖今陕西南部、甘肃东南部地区。多为三辅流民侨立郡县。',
+     quote:'分梁为南北秦。',source:'《宋书·州郡志》',
+     tags:['border','military'],
+     counties:['武都太守：下辩、上禄、陈仓（领县三，户一千二百七十四，口六千一百四十）','略阳太守：略阳、临汉、上邽（领县三，户一千三百五十九，口五千六百五十七）','安固太守：桓陵、南桓陵（领县二，户一千五百五，口二千四十四）','西京兆太守：蓝田、杜、鄠（领县三，户六百九十三，口四千五百五十二）','南太原太守：平陶（领县一，户二百三十三，口一千一百五十六）','南安太守：桓道、中陶（领县二，户六百二十，口三千八十九）','冯翊太守：莲芍、频阳、下辩、高陆、万年（领县五，户一千四百九十，口六千八百五十四）','陇西太守：襄武、临洮、河关、狄道、大夏、首阳（领县六，户一千五百六十一，口七千五百三十）','始平太守：始平、槐里、宋熙（领县三，户八百五十九，口五千四百四十一）','金城太守：金城、榆中（领县二，户三百七十五，口一千）','安定太守：朝那、宋兴（领县二，户六百四十，口二千五百一十八）','天水太守：阿阳、新（领县二，户八百九十三，口五千二百二十八）','西扶风太守：郿、武功（领县二，户百四十四）','北扶风太守：武功、华阴、始平（领县三）'],
+     phaseEvents:{0:'南秦為秦嶺以南的防禦要地。',1:'天監年間，秦州屢遭北魏侵擾。',2:'梁朝盛時，秦州一度向北推進。',3:'侯景之亂後，秦州為西魏所佔。'}},
+    {id:'ningzhou',name:'寧州',capital:'建寧',x:0.40,y:0.58,type:'border',color:'#8b6540',
+     desc:'治建宁（今云南曲靖），益州以南，辖今云南大部。',
+     detail:'宁州位于益州以南，辖今云南、贵州西南部地区。当地少数民族众多，是南朝西南边疆。特产金银、犀象、骏马。',
+     quote:'宁州，西南极远之地。',source:'《宋书·州郡志》',
+     tags:['border'],
+     counties:['建寧郡：建寧、味','興古郡：興古','云南郡：云南'],
+     phaseEvents:{0:'寧州為西南邊疆，轄今雲南大部，少數民族聚居。',1:'天監年間，寧州遣使朝貢。',2:'梁朝盛世，寧州與益州形成西南貿易圈。',3:'侯景之亂時，寧州受影響較小，維持相對安定。'}},
+    {id:'yuezhou',name:'越州',capital:'臨漳',x:0.62,y:0.80,type:'border',color:'#8b6540',
+     desc:'宋世分广为越，治临漳（今广西合浦附近），广州西南的边防重镇。',
+     detail:'越州从广州分出，位于广州西南，辖今广西南部及越南北部部分地区。',
+     quote:'分广为越。',source:'《宋书·州郡志》',
+     tags:['border'],
+     counties:['臨漳郡','寧浦郡'],
+     phaseEvents:{0:'越州為嶺南西南邊防要地。',1:'天監年間，越州與廣州並為嶺南雙子。',2:'梁朝盛世，越州海外貿易興盛。',3:'侯景之亂時，越州維持相對安定。'}},
+    {id:'yanzhou',name:'兗州',capital:'淮北（後淪陷）',x:0.76,y:0.20,type:'military',color:'#8b6540',
+     desc:'刺史，后汉治山阳昌邑，魏、晋治廪丘。宋末失淮北，侨立兖州，寄治淮阴。兖州领郡六，县三十一。户二万九千三百四十，口一十四万五千五百八十一。',
+     detail:'兗州原治瑕丘（今山东兖州），为中原重镇。宋太宗失淮北后沦于北魏，仅保留侨置建制。',
+     quote:'太宗初，索虏南侵，兗及豫州淮北并皆不守。',source:'《宋书·州郡志》',
+     tags:['military','border'],
+     counties:['泰山太守：奉高、巨平、嬴、牟、南城、武阳、梁父、博（领县八，户八千一百七十七，口四万五千五百八十一）','高平太守：高平、方与、金乡、巨野、平阳、亢父（领县六，户六千三百五十八，口二万一千一百一十二）','鲁郡太守：邹、汶阳、鲁、阳平、新阳、卞（领县六，户四千六百三十一，口二万八千三百七）','东平太守：无盐、平陆、须昌、寿昌、范（领县五，户四千一百五十九，口一万七千二百九十五）','阳平太守：馆陶、乐平、元城、平原、顿丘（领县五，户二千八百五十七，口一万一千二百七十一）','济北太守：蛇丘、卢、谷城（领县三，户三千一百五十八，口一万七千三）'],
+     phaseEvents:{0:'宋初兗州治瑕丘，太宗後淪於北魏。',1:'南齊時兗州僅為僑置，無實土。',2:'梁朝時兗州名存實亡。',3:'侯景之亂時兗州已無實際行政功能。'}},
+    {id:'qingzhou',name:'青州',capital:'贛榆（南遷後）',x:0.78,y:0.18,type:'border',color:'#8b6540',
+     desc:'刺史，治临淄，江左侨立，治广陵。安帝义熙五年平广固，北青州刺史治东阳城。孝武孝建二年，移治历城。大明八年，还治东阳。明帝失淮北，于郁州侨立青州。旧州领郡九。县四十六。户四万五百四，口四十万二千七百二十九。去京都陆二千。',
+     detail:'青州原为中原大州，治东阳。太宗失淮北后南迁治赣榆县，与冀州同治，实土极少。',
+     quote:'青、冀二州治赣榆之县。',source:'《宋书·州郡志》',
+     tags:['border'],
+     counties:['齐郡太守：临淄、西安、安平、般阳、广饶、昌国、益都（领县七，户七千三百四十六，口万四千八百八十九）','济南太守：广城、朝阳、著、土鼓、逢陵、平陵（领县六，户五千五十六，口三万八千一百七十五）','乐安太守：千乘、临济、博昌（领县三，户二千二百五十九，口一万四千九百九十一）','高密太守：黔陬、淳于、高密、夷安、营陵、昌安（领县六，户二千三百四，口一万三千八百二）','平昌太守：安丘、平昌、东武、琅邪、朱虚（领县五，户二千二百七十，口一万五千五十）','北海太守：都昌、胶东、剧、即墨、下密、平寿（领县六，户三千九百六十八，口三万五千九百九十五）','东莱太守：曲城、掖、㡉、卢乡、牟平、当利、黄（领县七，户一万一百三十一，口七万五千一百四十九）','太原太守：山茌、太原、祝阿（领县三，户二千七百五十七，口二万四千六百九十四）','长广太守：不其、长广、昌阳、挺（领县四，户二千九百六十六，口二万二十三）'],
+     phaseEvents:{0:'宋初青州治東陽，太宗後淪於北魏，南遷治贛榆。',1:'南齊時青州僅為僑置。',2:'梁朝時青州名存實亡。',3:'侯景之亂時青州已無實際行政功能。'}},
+    {id:'jizhou',name:'冀州',capital:'郁州',x:0.79,y:0.16,type:'border',color:'#8b6540',
+     desc:'刺史，江左立南冀州，后省。文帝元嘉九年，又分青州立，历城。割土置郡县。领郡九，县五十。户三万八千七十六，口一十八万一千一。去京都陆二千四百。',
+     detail:'冀州与青州同为侨置州，明帝失淮北后于郁州侨立。领郡九：广川、平原、清河、乐陵、魏郡、河閒、顿丘、高阳、勃海。',
+     quote:'冀州，江左侨立。',source:'《宋书·州郡志》',
+     tags:['border'],
+     counties:['广川郡：广川、中水、武强、索卢（户三千二百五十，口二万三千六百一十四）','平原郡：广宗、平原、鬲、安德、平昌、般、茌平、高唐（户五千九百一十三，口二万九千二百六十七）','清河郡：清河、武城、绎幕、贝丘、零、鄃、安次（户三千七百九十四，口二万九千二百七十四）','乐陵郡：乐陵、阳信、新乐、厌次、湿沃（户三千一百三，口一万六千六百六十一）','魏郡：魏、安阳、聊城、博平、肥乡、蠡吾、顿丘、临邑（户六千四百五，口三万三千六百八十二）','河閒郡：乐城、城平、武垣、章武、南皮、阜城（户二千七百八十一，口一万七千七百七）','顿丘郡：顿丘、卫国、肥阳、阴安（户一千二百三十八，口三千八百五十一）','高阳郡：安平、饶阳、邺、高阳、新城（户二千二百九十七，口一万四千七百二十五）','勃海郡：长乐、蓨、重合（户一千九百五，口万二千一百六十六）'],
+     phaseEvents:{0:'冀州江左侨立，元嘉九年分青州復立。',1:'南齊時冀州為僑置州。',2:'梁朝時冀州名存實亡。',3:'侯景之亂時冀州已無實際行政功能。'}}
+];
+
+// ========== 建康城数据（完整来自v4） ==========
+var jkWalls = [
+    {name:'宮城（台城）',type:'palace',rect:[0.40,0.14,0.20,0.18],desc:'宫城位于建康城北部正中，为皇帝居住和理政之所。周围砖墙环绕，梁武帝时增至三重围墙。内有太极殿、华林园等。'},
+    {name:'都城',type:'city',rect:[0.28,0.11,0.44,0.38],desc:'建康都城周二十里一十九步。宫城位于都城北部，街南为中央官署。南面三门：宣阳门、开阳门、陵阳门。'},
+    {name:'外郭',type:'outer',rect:[0.10,0.04,0.80,0.60],desc:'外郭以竹篱围成，设五十六座篱门，周长约四十里。郭城内为居民区和商业区的主要范围。'}
+];
+var jkGates = [
+    {name:'宣陽門',x:0.50,y:0.49,desc:'南面正门，出宣阳门向南五里至朱雀门为"苑路"御道。'},
+    {name:'開陽門',x:0.57,y:0.47,desc:'南面东门，平民出入要道。'},
+    {name:'陵陽門',x:0.43,y:0.47,desc:'南面西门。'},
+    {name:'清明門',x:0.72,y:0.29,desc:'东面偏南城门。'},
+    {name:'建春門',x:0.72,y:0.20,desc:'东面偏北城门。'},
+    {name:'西明門',x:0.28,y:0.29,desc:'西面城门，连接东西横街。'}
+];
+var jkStreets = [
+    {name:'苑路（御道）',from:[0.50,0.49],to:[0.50,0.70],main:true,desc:'从宣阳门至朱雀门的皇帝专用通道，长约五里。'},
+    {name:'東西橫街',from:[0.28,0.29],to:[0.72,0.29],main:true,desc:'连接西明门与建春门的东西向大街。'},
+    {name:'長干大街',from:[0.35,0.76],to:[0.65,0.76],main:false,desc:'秦淮河南岸东西向主街，长干里核心街道，两侧商铺林立。'},
+    {name:'橫塘街',from:[0.20,0.70],to:[0.35,0.70],main:false,desc:'秦淮河西岸横塘一带的商业街道。'}
+];
+var jkRivers = [
+    {name:'秦淮河',from:[0.06,0.72],to:[0.94,0.72],main:true,desc:'穿城而过的主要河流，两岸为繁华商业区和居民区。'},
+    {name:'運渎',from:[0.36,0.49],to:[0.36,0.72],main:false,desc:'人工运河，连接宫城与秦淮河。'},
+    {name:'潮溝',from:[0.56,0.49],to:[0.56,0.72],main:false,desc:'人工运河，引玄武湖水入城。'},
+    {name:'破岡渎',from:[0.80,0.72],to:[0.88,0.60],main:false,desc:'人工运河，东接江南运河以通吴会。'}
+];
+var jkLandmarks = [
+    // 宫殿
+    {name:'太極殿',x:0.50,y:0.22,r:10,type:'palace',desc:'宫城正殿，皇帝举行大朝会之所。梁武帝天监十二年重建，改为十三间。'},
+    {name:'東西二堂',x:0.50,y:0.26,r:8,type:'palace',desc:'太极殿两侧配殿，东堂日常理政，西堂宴会接见。'},
+    {name:'端門',x:0.50,y:0.32,r:6,type:'palace',desc:'宫城南门，位于太极殿正南。'},
+    {name:'華林園',x:0.58,y:0.17,r:9,type:'palace',desc:'宫城东北皇家园林，内有景阳山、天渊池。梁武帝常于此讲经说法。'},
+    {name:'東宮',x:0.62,y:0.24,r:8,type:'palace',desc:'太子所居之宫，位于宫城东侧。'},
+    {name:'太倉',x:0.44,y:0.28,r:6,type:'palace',desc:'宫城东南角的国家粮仓。'},
+    // 城门
+    {name:'大司馬門',x:0.50,y:0.36,r:6,type:'gate',desc:'宫城外壁南门，门前立神龙、仁虎二阙。'},
+    {name:'朱雀門',x:0.50,y:0.72,r:10,type:'gate',desc:'横跨秦淮河的城门，为都城南大门，门外即繁华商业区。'},
+    // 军事要塞
+    {name:'石頭城',x:0.16,y:0.32,r:10,type:'fort',desc:'位于城西石头山，为建康西部军事要塞，控扼长江。'},
+    {name:'西州城',x:0.30,y:0.42,r:8,type:'fort',desc:'位于都城西南，王敦建城，侯景曾屯兵于此。'},
+    {name:'東府城',x:0.70,y:0.42,r:8,type:'fort',desc:'位于城东，为宰相府邸所在，与西州城遥相呼应。'},
+    {name:'越城',x:0.36,y:0.88,r:7,type:'fort',desc:'位于城南石子岗（今雨花台），春秋越国旧都遗址。'},
+    // 寺庙
+    {name:'同泰寺',x:0.56,y:0.08,r:9,type:'temple',desc:'梁武帝萧衍多次舍身于此寺，为南朝佛教中心，寺内有九层浮图。'},
+    {name:'建初寺',x:0.55,y:0.78,r:7,type:'temple',desc:'东吴赤乌十年建，江南第一座佛寺，位于大市附近。'},
+    // 山水
+    {name:'鍾山（蔣山）',x:0.84,y:0.15,r:12,type:'mountain',desc:'位于建康城东北，为都城天然屏障。'},
+    {name:'玄武湖',x:0.44,y:0.05,r:10,type:'water',desc:'位于宫城北面，皇家园林水域，可操练水军。'},
+    {name:'新林浦',x:0.20,y:0.58,r:7,type:'water',desc:'城西南江边，水军操练和船只停泊之地。'},
+    {name:'白鷺洲',x:0.76,y:0.66,r:7,type:'water',desc:'长江中沙洲，因白鹭聚集而得名。'},
+    // 平民居住区
+    {name:'長干里',x:0.56,y:0.80,r:12,type:'residence',desc:'秦淮河南岸最著名的平民居住区。《吴都赋》："横塘查下，邑屋隆夸，长干延属，飞甍舛互。"百姓、商贾云集。'},
+    {name:'橫塘',x:0.28,y:0.76,r:9,type:'residence',desc:'秦淮河西岸平民聚居区，与大市相邻，大量手工艺人和小商贩居住于此。'},
+    {name:'門東',x:0.60,y:0.84,r:8,type:'residence',desc:'朱雀门以东的老城核心区，商铺与民居混杂的普通市民居住区。'},
+    {name:'門西',x:0.48,y:0.84,r:8,type:'residence',desc:'朱雀门以西的平民区，与小市、手工作坊相邻。'},
+    {name:'烏衣巷',x:0.62,y:0.72,r:8,type:'residence',desc:'秦淮河北岸，王导、谢安两大家族居此。巷内也有大量依附士族的仆从居住。'},
+    // 商业区/市场
+    {name:'大市',x:0.48,y:0.80,r:9,type:'market',desc:'吴大帝立于建初寺前，秦淮河南岸，百货俱全，为建康城最大的综合性市场。'},
+    {name:'北市',x:0.46,y:0.22,r:7,type:'market',desc:'宋武帝立于大夏门外归善寺前，供应城北居民和宫城需求。'},
+    {name:'南市（東市）',x:0.66,y:0.52,r:8,type:'market',desc:'三桥篱门外斗场村内，靠近斗场锦署，丝绸交易繁盛。'},
+    {name:'小市',x:0.40,y:0.78,r:7,type:'market',desc:'遍布全城的小型集市，售卖日用杂货。'},
+    {name:'牛馬市',x:0.72,y:0.48,r:6,type:'market',desc:'专门交易牛马等牲畜，位于城东篱门外。'},
+    {name:'谷市',x:0.34,y:0.68,r:7,type:'market',desc:'粮食交易市场，位于秦淮河西岸。'},
+    {name:'紗市',x:0.62,y:0.58,r:6,type:'market',desc:'纺织品专业市场，售卖锦缎、绢帛。'},
+    {name:'蜆市',x:0.30,y:0.74,r:6,type:'market',desc:'水产市场，售卖秦淮河中的蚬贝鱼虾。'},
+    {name:'花市',x:0.68,y:0.70,r:6,type:'market',desc:'花卉交易市场，秦淮河畔观赏花木集散地。'},
+    {name:'草市',x:0.24,y:0.64,r:6,type:'market',desc:'城郊草市，售卖柴草、蔬菜等农副产品。'},
+    // 手工业区
+    {name:'斗場錦署',x:0.68,y:0.50,r:9,type:'craft',desc:'义熙十三年刘裕所建，管理织锦业。集中长安迁来的织锦工人，生产"罗纹锦"。'},
+    {name:'紙官署',x:0.74,y:0.24,r:8,type:'craft',desc:'城东官营造纸作坊，制成著名"银光纸"。'},
+    {name:'冶城',x:0.22,y:0.38,r:8,type:'craft',desc:'城西重要冶炼作坊，生产"百炼钢"刀剑。'},
+    {name:'陶器作坊',x:0.32,y:0.66,r:6,type:'craft',desc:'城西南秦淮河畔官营陶器作坊。'},
+    {name:'鑄錢作坊',x:0.70,y:0.32,r:6,type:'craft',desc:'光华门外，梁时铜五铢钱铸造中心。'},
+    {name:'東冶',x:0.76,y:0.30,r:6,type:'craft',desc:'官营冶炼作坊，负责兵器和农具铸造。'}
+];
+
+// ========== 古风绘制辅助函数 ==========
+
+function drawMountainRange(ctx, x, y, count, size, color1, color2) {
+    for (var pass = 0; pass < 2; pass++) {
+        ctx.beginPath();
+        var startX = x - count * size;
+        ctx.moveTo(startX, y);
+        for (var i = 0; i < count; i++) {
+            var mx = startX + i * size * 2 + size;
+            var my = y - size * (0.8 + Math.sin(i * 0.7) * 0.3);
+            ctx.quadraticCurveTo(mx - size * 0.3, my, mx, my);
+            ctx.quadraticCurveTo(mx + size * 0.3, my, mx + size, y);
+        }
+        ctx.strokeStyle = pass === 0 ? color1 : color2;
+        ctx.lineWidth = pass === 0 ? 1.5 : 1;
+        ctx.stroke();
+    }
+}
+
+function drawDoubleLineRiver(ctx, points, w, color) {
+    if (points.length < 2) return;
+    var offset = w / 2;
+    ctx.beginPath();
+    ctx.moveTo(points[0][0] * width, points[0][1] * height - offset);
+    for (var i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0] * width, points[i][1] * height - offset);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(points[0][0] * width, points[0][1] * height + offset);
+    for (var i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0] * width, points[i][1] * height + offset);
+    }
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(points[0][0] * width, points[0][1] * height);
+    for (var i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0] * width, points[i][1] * height);
+    }
+    ctx.strokeStyle = '#e8d5b7';
+    ctx.lineWidth = Math.max(0.5, w - 3);
+    ctx.stroke();
+}
+
+function drawSingleRiver(ctx, points, w, color) {
+    ctx.beginPath();
+    ctx.moveTo(points[0][0] * width, points[0][1] * height);
+    for (var i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i][0] * width, points[i][1] * height);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = w;
+    ctx.stroke();
+}
+
+function drawLake(ctx, x, y, r, name) {
+    var cx = x * width, cy = y * height;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, r * 1.3, r, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(90,138,106,.12)';
+    ctx.fill();
+    ctx.strokeStyle = '#5a8a6a';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    for (var wi = -1; wi <= 1; wi++) {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + wi * 4, r * 0.9, r * 0.4, 0, 0, Math.PI);
+        ctx.strokeStyle = 'rgba(90,138,106,.3)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+    }
+    ctx.fillStyle = '#3d2810';
+    ctx.font = '10px "Noto Serif SC", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(name, cx, cy + r + 14);
+}
+
+function drawWavePattern(ctx, x, y, w, h, count, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 0.8;
+    for (var row = 0; row < count; row++) {
+        var ry = y + row * (h / count);
+        ctx.beginPath();
+        for (var xi = 0; xi < w; xi += 8) {
+            ctx.arc(x + xi, ry, 3, Math.PI, 0, false);
+        }
+        ctx.stroke();
+    }
+}
+
+function drawCityMarker(ctx, sx, sy, isCapital, isSelected, isHovered, pulseColor) {
+    var boxSize = isCapital ? 12 : 8;
+    if (isSelected || isHovered) {
+        ctx.fillStyle = 'rgba(194,58,42,.1)';
+        ctx.fillRect(sx - boxSize - 4, sy - boxSize - 4, boxSize * 2 + 8, boxSize * 2 + 8);
+        ctx.strokeStyle = '#c23a2a';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(sx - boxSize - 4, sy - boxSize - 4, boxSize * 2 + 8, boxSize * 2 + 8);
+    }
+    // 金色/红色闪烁边框（阶段高亮）
+    if (pulseColor) {
+        var t = Date.now() / 600;
+        var pw = boxSize + 5 + Math.sin(t) * 2.5;
+        ctx.strokeStyle = pulseColor;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 3]);
+        ctx.strokeRect(sx - pw, sy - pw, pw * 2, pw * 2);
+        ctx.setLineDash([]);
+    }
+    ctx.fillStyle = '#c23a2a';
+    ctx.fillRect(sx - boxSize / 2, sy - boxSize / 2, boxSize, boxSize);
+    ctx.strokeStyle = '#8b1a10';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(sx - boxSize / 2, sy - boxSize / 2, boxSize, boxSize);
+}
+
+function getStateById(id) {
+    for (var i = 0; i < nationalStates.length; i++) {
+        if (nationalStates[i].id === id) return nationalStates[i];
+    }
+    return null;
+}
+
+function drawRoute(ctx, fromState, toState, color, style, time) {
+    var fx = fromState.x * width, fy = fromState.y * height;
+    var tx = toState.x * width, ty = toState.y * height;
+    var cx = (fx + tx) / 2 - (ty - fy) * 0.15;
+    var cy = (fy + ty) / 2 + (tx - fx) * 0.15;
+
+    ctx.beginPath();
+    ctx.moveTo(fx, fy);
+    ctx.quadraticCurveTo(cx, cy, tx, ty);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = style === 'solid' ? 2.5 : 1.5;
+    if (style === 'dashed') ctx.setLineDash([8, 6]);
+    else ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 路径描述
+    var midX = (fx + tx) / 2 * 0.5 + cx * 0.5;
+    var midY = (fy + ty) / 2 * 0.5 + cy * 0.5;
+    ctx.fillStyle = '#5c3d1f';
+    ctx.font = '9px "Noto Serif SC", serif';
+    ctx.textAlign = 'center';
+
+    if (style === 'solid') {
+        var t = (time % 3000) / 3000;
+        var px = (1 - t) * (1 - t) * fx + 2 * (1 - t) * t * cx + t * t * tx;
+        var py = (1 - t) * (1 - t) * fy + 2 * (1 - t) * t * cy + t * t * ty;
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        // 小圆点拖尾
+        for (var ti = 1; ti <= 3; ti++) {
+            var tt = ((time - ti * 200) % 3000) / 3000;
+            if (tt < 0) tt += 1;
+            var ppx = (1 - tt) * (1 - tt) * fx + 2 * (1 - tt) * tt * cx + tt * tt * tx;
+            var ppy = (1 - tt) * (1 - tt) * fy + 2 * (1 - tt) * tt * cy + tt * tt * ty;
+            ctx.beginPath();
+            ctx.arc(ppx, ppy, 4 - ti, 0, Math.PI * 2);
+            ctx.fillStyle = color + '60';
+            ctx.fill();
+        }
+    }
+    return { mx: midX, my: midY };
+}
+
+// ========== 渲染函数 ==========
+function render(time) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = '#e8d5b7';
+    ctx.fillRect(0, 0, width, height);
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+    if (currentView === 'national') { renderNational(time || 0); }
+    else { renderJiankang(time || 0); }
+    ctx.restore();
+    // 迷你地图
+    if (currentView === 'national') { drawMinimap(); }
+}
+
+function renderNational(time) {
+    // 1. 计里画方网格
+    ctx.strokeStyle = 'rgba(160,130,80,.12)';
+    ctx.lineWidth = 0.5;
+    var gridSpacing = 60;
+    for (var gx = 0; gx < width; gx += gridSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(gx, 0);
+        ctx.lineTo(gx, height);
+        ctx.stroke();
+    }
+    for (var gy = 0; gy < height; gy += gridSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, gy);
+        ctx.lineTo(width, gy);
+        ctx.stroke();
+    }
+
+    // 2. 疆域边界
+    ctx.beginPath();
+    ctx.moveTo(nationalBoundary[0][0] * width, nationalBoundary[0][1] * height);
+    for (var i = 1; i < nationalBoundary.length; i++) {
+        ctx.lineTo(nationalBoundary[i][0] * width, nationalBoundary[i][1] * height);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(160,120,60,.05)';
+    ctx.fill();
+    ctx.strokeStyle = '#5c3d1f';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // 3. 边界外波浪纹
+    drawWavePattern(ctx, 0.92 * width, 0.08 * height, 0.10 * width, 0.85 * height, 18, 'rgba(90,138,106,.2)');
+    drawWavePattern(ctx, 0.93 * width, 0.12 * height, 0.08 * width, 0.78 * height, 14, 'rgba(90,138,106,.15)');
+    drawWavePattern(ctx, 0.50 * width, 0.88 * height, 0.50 * width, 0.08 * height, 6, 'rgba(90,138,106,.18)');
+
+    // 4. 湖泊
+    for (var li = 0; li < nationalLakes.length; li++) {
+        var lk = nationalLakes[li];
+        drawLake(ctx, lk.x, lk.y, lk.r, lk.name);
+    }
+
+    // 5. 河流
+    for (var ri = 0; ri < nationalRivers.length; ri++) {
+        var rv = nationalRivers[ri];
+        if (rv.name === '長江') {
+            drawDoubleLineRiver(ctx, rv.pts, rv.w, '#8b6540');
+        } else if (rv.w >= 2.5) {
+            drawDoubleLineRiver(ctx, rv.pts, rv.w * 0.7, '#a07050');
+        } else {
+            drawSingleRiver(ctx, rv.pts, rv.w, '#a07050');
+        }
+        var rmp = rv.pts[Math.floor(rv.pts.length / 2)];
+        ctx.save();
+        ctx.fillStyle = '#3d2810';
+        ctx.font = '11px "Noto Serif SC", serif';
+        ctx.textAlign = 'center';
+        var chars = rv.name.split('');
+        var charSpacing = 13;
+        var nameStartY = rmp[1] * height - (chars.length - 1) * charSpacing / 2;
+        for (var ci = 0; ci < chars.length; ci++) {
+            ctx.fillText(chars[ci], rmp[0] * width - 12, nameStartY + ci * charSpacing);
+        }
+        ctx.restore();
+    }
+
+    // 6. 山脉
+    for (var mi = 0; mi < nationalMountains.length; mi++) {
+        var m = nationalMountains[mi];
+        var midPt = m.pts[Math.floor(m.pts.length / 2)];
+        for (var pi = 0; pi < m.pts.length; pi++) {
+            var px = m.pts[pi][0] * width;
+            var py = m.pts[pi][1] * height;
+            drawMountainRange(ctx, px, py, 6, 8, '#3a6b7c', '#5a8a6a');
+        }
+        ctx.save();
+        ctx.fillStyle = '#3d2810';
+        ctx.font = '11px "Noto Serif SC", serif';
+        ctx.textAlign = 'center';
+        var mChars = m.name.split('');
+        var mSpacing = 13;
+        var mStartY = midPt[1] * height - 28 - (mChars.length - 1) * mSpacing / 2;
+        for (var mci = 0; mci < mChars.length; mci++) {
+            ctx.fillText(mChars[mci], midPt[0] * width, mStartY + mci * mSpacing);
+        }
+        ctx.restore();
+    }
+
+    // 7. 路径（阶段驱动）
+    var routeList = ROUTES[currentPhase] || [];
+    for (var ri = 0; ri < routeList.length; ri++) {
+        var r = routeList[ri];
+        var fs = getStateById(r.from);
+        var ts = getStateById(r.to);
+        if (fs && ts) {
+            drawRoute(ctx, fs, ts, r.color, r.style, time);
+            // 路径文字标注
+            var fxx = fs.x * width, fyy = fs.y * height;
+            var txx = ts.x * width, tyy = ts.y * height;
+            var cxx = (fxx + txx) / 2 - (tyy - fyy) * 0.15;
+            var cyy = (fyy + tyy) / 2 + (txx - fxx) * 0.15;
+            var mxx = (fxx + txx) / 2 * 0.5 + cxx * 0.5;
+            var myy = (fyy + tyy) / 2 * 0.5 + cyy * 0.5;
+            ctx.fillStyle = '#5c3d1f';
+            ctx.font = '9px "Noto Serif SC", serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(r.desc, mxx, myy - 10);
+        }
+    }
+
+    // 8. 州治/城市
+    var hl = PHASE_HIGHLIGHT[currentPhase] || { states: [], pulseColor: '' };
+    for (var si = 0; si < nationalStates.length; si++) {
+        var s = nationalStates[si];
+        var sx = s.x * width, sy = s.y * height;
+        var isHL = hl.states.indexOf(s.id) >= 0;
+
+        // 扬州脉冲（始终）
+        if (s.id === 'yangzhou') {
+            var t = Date.now() / 800;
+            var pr = 13 + Math.sin(t) * 4;
+            ctx.beginPath();
+            ctx.arc(sx, sy, pr, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(194,58,42,.25)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // 阶段高亮光晕
+        if (isHL && hl.glowColor) {
+            var gt = Date.now() / 700;
+            var gr = 22 + Math.sin(gt) * 5;
+            var grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, gr);
+            grad.addColorStop(0, hl.glowColor);
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(sx, sy, gr, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // 盛世建康金色光晕
+        if (currentPhase === 2 && s.id === 'yangzhou') {
+            var grad2 = ctx.createRadialGradient(sx, sy, 5, sx, sy, 45);
+            grad2.addColorStop(0, 'rgba(212,168,83,.45)');
+            grad2.addColorStop(1, 'rgba(212,168,83,0)');
+            ctx.fillStyle = grad2;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 45, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        var isSel = s === selectedRegion;
+        var isHov = s === hoveredRegion;
+        drawCityMarker(ctx, sx, sy, s.type === 'capital', isSel, isHov, isHL ? hl.pulseColor : '');
+
+        ctx.fillStyle = '#3d2810';
+        ctx.font = (s.type === 'capital' ? 'bold 13px' : '13px') + ' "Noto Serif SC", serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(s.name, sx + 10, sy - 6);
+        ctx.font = '10px "Noto Serif SC", serif';
+        ctx.fillStyle = '#5c3d1f';
+        ctx.fillText(s.capital, sx + 10, sy + 8);
+    }
+
+    // 9. 图题
+    ctx.fillStyle = '#3d2810';
+    ctx.font = 'bold 14px "Noto Serif SC", serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('南朝疆域圖（蕭梁時期）', 24, height - 24);
+    ctx.fillStyle = '#5c3d1f';
+    ctx.font = '10px "Noto Serif SC", serif';
+    ctx.fillText('參考：譚其驤《中國歷史地圖集》第四冊', 24, height - 42);
+}
+
+function renderJiankang(time) {
+    ctx.strokeStyle = 'rgba(160,130,80,.10)';
+    ctx.lineWidth = 0.5;
+    var gridSpacing = 60;
+    for (var gx = 0; gx < width; gx += gridSpacing) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, height); ctx.stroke();
+    }
+    for (var gy = 0; gy < height; gy += gridSpacing) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(width, gy); ctx.stroke();
+    }
+
+    var wallFills = { palace: 'rgba(194,58,42,.08)', city: 'rgba(92,61,31,.04)', outer: 'rgba(90,138,106,.03)' };
+    var wallStrokes = { palace: '#5c3d1f', city: '#5c3d1f', outer: 'rgba(92,61,31,.4)' };
+    var wallWidths = { palace: 4, city: 3, outer: 2 };
+    for (var wi = 0; wi < jkWalls.length; wi++) {
+        var w = jkWalls[wi];
+        var wx = w.rect[0] * width, wy = w.rect[1] * height;
+        var ww = w.rect[2] * width, wh = w.rect[3] * height;
+        ctx.fillStyle = wallFills[w.type];
+        ctx.fillRect(wx, wy, ww, wh);
+        ctx.strokeStyle = wallStrokes[w.type];
+        ctx.lineWidth = wallWidths[w.type];
+        if (w.type === 'outer') { ctx.setLineDash([8, 4]); }
+        ctx.strokeRect(wx, wy, ww, wh);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#3d2810';
+        ctx.font = '11px "Noto Serif SC", serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(w.name, wx + 5, wy + 15);
+    }
+
+    for (var si = 0; si < jkStreets.length; si++) {
+        var st = jkStreets[si];
+        ctx.beginPath();
+        ctx.moveTo(st.from[0] * width, st.from[1] * height);
+        ctx.lineTo(st.to[0] * width, st.to[1] * height);
+        ctx.strokeStyle = '#a07050';
+        ctx.lineWidth = st.main ? 2.5 : 1.5;
+        ctx.stroke();
+        var smx = (st.from[0] + st.to[0]) / 2 * width;
+        var smy = (st.from[1] + st.to[1]) / 2 * height;
+        ctx.fillStyle = '#5c3d1f';
+        ctx.font = '9px "Noto Serif SC", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(st.name, smx, smy - 5);
+    }
+
+    for (var ri = 0; ri < jkRivers.length; ri++) {
+        var rv = jkRivers[ri];
+        var fromPt = [rv.from[0] * width, rv.from[1] * height];
+        var toPt = [rv.to[0] * width, rv.to[1] * height];
+        var lw = rv.main ? 10 : 5;
+        var offset = lw / 2;
+        ctx.beginPath();
+        ctx.moveTo(fromPt[0], fromPt[1] - offset);
+        ctx.lineTo(toPt[0], toPt[1] - offset);
+        ctx.strokeStyle = '#8b6540';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(fromPt[0], fromPt[1] + offset);
+        ctx.lineTo(toPt[0], toPt[1] + offset);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(fromPt[0], fromPt[1]);
+        ctx.lineTo(toPt[0], toPt[1]);
+        ctx.strokeStyle = '#e8d5b7';
+        ctx.lineWidth = Math.max(1, lw - 3);
+        ctx.stroke();
+        var rmx = (rv.from[0] + rv.to[0]) / 2 * width;
+        var rmy = (rv.from[1] + rv.to[1]) / 2 * height;
+        ctx.fillStyle = '#3d2810';
+        ctx.font = '11px "Noto Serif SC", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(rv.name, rmx, rmy - (rv.main ? 14 : 10));
+    }
+
+    for (var gi = 0; gi < jkGates.length; gi++) {
+        var g = jkGates[gi];
+        var gx = g.x * width, gy = g.y * height;
+        ctx.fillStyle = '#c23a2a';
+        ctx.fillRect(gx - 5, gy - 5, 10, 10);
+        ctx.strokeStyle = '#8b1a10';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(gx - 5, gy - 5, 10, 10);
+        ctx.fillStyle = '#3d2810';
+        ctx.font = '9px "Noto Serif SC", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(g.name, gx, gy + 16);
+    }
+
+    var typeColors = {
+        gate: '#c23a2a', residence: '#8b6540', fort: '#5c3d1f',
+        market: '#3a6b7c', temple: '#c23a2a', mountain: '#3a6b7c',
+        water: '#5a8a6a', palace: '#c23a2a', craft: '#8b6540'
+    };
+    for (var li = 0; li < jkLandmarks.length; li++) {
+        var lm = jkLandmarks[li];
+        var lx = lm.x * width, ly = lm.y * height;
+        var isSel = lm === selectedRegion;
+        var isHov = lm === hoveredRegion;
+        if (isSel || isHov) {
+            ctx.fillStyle = 'rgba(194,58,42,.08)';
+            ctx.fillRect(lx - lm.r - 4, ly - lm.r - 4, lm.r * 2 + 8, lm.r * 2 + 8);
+            ctx.strokeStyle = '#c23a2a';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(lx - lm.r - 4, ly - lm.r - 4, lm.r * 2 + 8, lm.r * 2 + 8);
+        }
+        var col = typeColors[lm.type] || '#c23a2a';
+        if (lm.type === 'mountain' || lm.type === 'water') {
+            ctx.beginPath();
+            ctx.arc(lx, ly, lm.r, 0, Math.PI * 2);
+            ctx.fillStyle = col + '40';
+            ctx.fill();
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        } else {
+            ctx.fillStyle = col;
+            ctx.fillRect(lx - lm.r / 2, ly - lm.r / 2, lm.r, lm.r);
+            ctx.strokeStyle = '#3d2810';
+            ctx.lineWidth = 0.8;
+            ctx.strokeRect(lx - lm.r / 2, ly - lm.r / 2, lm.r, lm.r);
+        }
+        ctx.fillStyle = '#3d2810';
+        ctx.font = 'bold 10px "Noto Serif SC", serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(lm.name, lx, ly + lm.r + 13);
+    }
+
+    ctx.fillStyle = 'rgba(92,61,31,.18)';
+    ctx.font = 'bold 13px "Noto Serif SC", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('長干里居民區', 0.56 * width, 0.86 * height);
+    ctx.fillStyle = 'rgba(58,107,124,.15)';
+    ctx.fillText('秦淮商業區', 0.50 * width, 0.68 * height);
+    ctx.fillStyle = 'rgba(139,101,64,.18)';
+    ctx.font = 'bold 12px "Noto Serif SC", serif';
+    ctx.fillText('斗場手工業區', 0.68 * width, 0.56 * height);
+
+    ctx.fillStyle = '#3d2810';
+    ctx.font = 'bold 14px "Noto Serif SC", serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('建康城平面圖（蕭梁時期）', 24, height - 24);
+    ctx.fillStyle = '#5c3d1f';
+    ctx.font = '10px "Noto Serif SC", serif';
+    ctx.fillText('數據來源：《景定建康志》《丹陽記》', 24, height - 42);
+    ctx.fillText('參考：譚其驤《中國歷史地圖集》、考古發現', 24, height - 56);
+}
+
+// ========== 迷你地图 ==========
+function drawMinimap() {
+    miniCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    miniCtx.clearRect(0, 0, miniW, miniH);
+    miniCtx.fillStyle = 'rgba(232,213,183,.9)';
+    miniCtx.fillRect(0, 0, miniW, miniH);
+
+    var mScaleX = miniW / width;
+    var mScaleY = miniH / height;
+
+    // 简化疆域轮廓
+    miniCtx.beginPath();
+    miniCtx.moveTo(nationalBoundary[0][0] * miniW, nationalBoundary[0][1] * miniH);
+    for (var i = 1; i < nationalBoundary.length; i++) {
+        miniCtx.lineTo(nationalBoundary[i][0] * miniW, nationalBoundary[i][1] * miniH);
+    }
+    miniCtx.closePath();
+    miniCtx.fillStyle = 'rgba(160,120,60,.08)';
+    miniCtx.fill();
+    miniCtx.strokeStyle = '#5c3d1f';
+    miniCtx.lineWidth = 1.2;
+    miniCtx.stroke();
+
+    // 州治小红点
+    for (var si = 0; si < nationalStates.length; si++) {
+        var s = nationalStates[si];
+        miniCtx.fillStyle = s.type === 'capital' ? '#c23a2a' : '#8b6540';
+        miniCtx.beginPath();
+        miniCtx.arc(s.x * miniW, s.y * miniH, s.type === 'capital' ? 2.5 : 1.8, 0, Math.PI * 2);
+        miniCtx.fill();
+    }
+
+    // 当前选中州
+    if (selectedRegion && selectedRegion.id) {
+        var sel = selectedRegion;
+        miniCtx.fillStyle = '#c23a2a';
+        miniCtx.beginPath();
+        miniCtx.arc(sel.x * miniW, sel.y * miniH, 4, 0, Math.PI * 2);
+        miniCtx.fill();
+        miniCtx.strokeStyle = '#e8d5b7';
+        miniCtx.lineWidth = 1;
+        miniCtx.stroke();
+    }
+
+    // 视口矩形
+    var vx = -offsetX / scale / width * miniW;
+    var vy = -offsetY / scale / height * miniH;
+    var vw = (width / scale) / width * miniW;
+    var vh = (height / scale) / height * miniH;
+    miniCtx.strokeStyle = 'rgba(92,61,31,.5)';
+    miniCtx.lineWidth = 1;
+    miniCtx.setLineDash([3, 2]);
+    miniCtx.strokeRect(vx, vy, vw, vh);
+    miniCtx.setLineDash([]);
+    miniCtx.fillStyle = 'rgba(92,61,31,.08)';
+    miniCtx.fillRect(vx, vy, vw, vh);
+}
+
+// ========== 交互 ==========
+function getRegionAt(x, y) {
+    var mx = (x - offsetX) / scale, my = (y - offsetY) / scale;
+    if (currentView === 'national') {
+        for (var i = 0; i < nationalStates.length; i++) {
+            var s = nationalStates[i];
+            var dx = mx - s.x * width, dy = my - s.y * height;
+            if (Math.sqrt(dx * dx + dy * dy) <= 22) return s;
+        }
+    } else {
+        for (var i = 0; i < jkLandmarks.length; i++) {
+            var lm = jkLandmarks[i];
+            var dx = mx - lm.x * width, dy = my - lm.y * height;
+            if (Math.sqrt(dx * dx + dy * dy) <= lm.r + 5) return lm;
+        }
+        for (var i = 0; i < jkGates.length; i++) {
+            var g = jkGates[i];
+            var dx = mx - g.x * width, dy = my - g.y * height;
+            if (Math.sqrt(dx * dx + dy * dy) <= 12) return g;
+        }
+        for (var i = 0; i < jkWalls.length; i++) {
+            var w = jkWalls[i];
+            var r = w.rect;
+            if (mx >= r[0] * width && mx <= (r[0] + r[2]) * width && my >= r[1] * height && my <= (r[1] + r[3]) * height) return w;
+        }
+    }
+    return null;
+}
+
+function showRegionDetail(region) {
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('panelContent').style.display = 'block';
+    document.getElementById('panelTitle').textContent = region.name;
+    document.getElementById('panelSubtitle').textContent = currentView === 'national' ? '治所：' + region.capital : '建康城地標';
+    document.getElementById('panelTabs').style.display = currentView === 'national' ? 'flex' : 'none';
+
+    // 默认显示详情
+    panelTab = 'detail';
+    updatePanelTabs();
+    renderPanelBody(region);
+}
+
+function updatePanelTabs() {
+    document.querySelectorAll('.panel-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.ptab === panelTab);
+    });
+}
+
+function renderPanelBody(region) {
+    var tagsHtml = '', bodyHtml = '';
+    if (currentView === 'national') {
+        var tm = { capital: ['tag-capital', '京畿'], military: ['tag-military', '軍事重鎮'], economic: ['tag-economic', '經濟中心'], cultural: ['tag-cultural', '文化中心'], border: ['tag-border', '邊陲'] };
+        tagsHtml = (region.tags || []).map(function (t) { var m = tm[t] || ['', '']; return '<span class="tag ' + m[0] + '">' + m[1] + '</span>'; }).join('');
+        var linkBtn = region.id === 'yangzhou' ? '<br><button class="btn-link" id="enterJiankang">進入建康城</button>' : '';
+        if (panelTab === 'detail') {
+            bodyHtml = '<div class="panel-section"><h3>地理位置</h3><p>' + region.desc + '</p></div>' +
+                '<div class="panel-section"><h3>歷史概況</h3><p>' + region.detail + '</p>' +
+                '<div class="quote">"' + region.quote + '"</div>' +
+                '<p style="font-size:.8em;color:#8b6540;text-align:right">—— ' + region.source + '</p>' +
+                linkBtn + '</div>' +
+                '<div class="panel-section"><h3>轄郡（部分）</h3><div class="county-list">' +
+                (region.counties || []).map(function (c) { return '<span class="county-tag">' + c + '</span>'; }).join('') +
+                '</div></div>';
+        } else {
+            var evt = (region.phaseEvents && region.phaseEvents[currentPhase]) ? region.phaseEvents[currentPhase] : '該階段無詳細記載。';
+            bodyHtml = '<div class="panel-section"><h3>' + PHASE_NAMES[currentPhase] + ' · 大事記</h3><p>' + evt + '</p></div>' +
+                '<div class="panel-section"><h3>各時期回顧</h3>' +
+                Object.keys(region.phaseEvents || {}).map(function(k) {
+                    var phaseIdx = parseInt(k);
+                    var isCur = phaseIdx === currentPhase;
+                    return '<p style="font-size:.82em;line-height:1.7;margin-bottom:8px;padding:6px 8px;border-radius:2px;' + (isCur ? 'background:rgba(160,120,60,.1);border-left:3px solid #8b6540;' : '') + '"><strong style="color:#5c3d1f">' + PHASE_NAMES[phaseIdx] + '：</strong>' + region.phaseEvents[k] + '</p>';
+                }).join('') +
+                '</div>';
+        }
+    } else {
+        var typeMap = { palace: '宮殿', city: '城牆', outer: '外郭', gate: '城門', residence: '民居', fort: '城壘', market: '市集', temple: '寺院', mountain: '山嶽', water: '水域', craft: '作坊' };
+        var tagCls = { residence: 'tag-residence', market: 'tag-market', craft: 'tag-craft', palace: 'tag-capital', fort: 'tag-military', temple: 'tag-cultural' };
+        tagsHtml = '<span class="tag ' + (tagCls[region.type] || 'tag-cultural') + '">' + (typeMap[region.type] || region.type) + '</span>';
+        // 建康城解锁提示
+        var unlockLine = '<p style="color:#8b6540;font-size:.82em;margin-bottom:10px;">&#128275; 已解鎖建康城 · 蕭梁京畿核心區域</p>';
+        bodyHtml = unlockLine + '<div class="panel-section"><h3>位置與功能</h3><p>' + region.desc + '</p></div>';
+    }
+    document.getElementById('panelBody').innerHTML = '<div class="tag-list">' + tagsHtml + '</div>' + bodyHtml;
+
+    var enterBtn = document.getElementById('enterJiankang');
+    if (enterBtn) enterBtn.onclick = switchToJiankang;
+}
+
+function switchToJiankang() {
+    document.querySelectorAll('.view-tab').forEach(function (t) { t.classList.remove('active'); });
+    document.querySelector('[data-view="jiankang"]').classList.add('active');
+    currentView = 'jiankang';
+    document.getElementById('controlTitle').textContent = '建康城圖 · 蕭梁京畿';
+    scale = 1.1; offsetX = -width * 0.05; offsetY = -height * 0.03;
+    selectedRegion = null;
+    updateLegend();
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('panelContent').style.display = 'none';
+}
+
+function switchToNational() {
+    document.querySelectorAll('.view-tab').forEach(function (t) { t.classList.remove('active'); });
+    document.querySelector('[data-view="national"]').classList.add('active');
+    currentView = 'national';
+    document.getElementById('controlTitle').textContent = '南朝輿圖 · 蕭梁疆域';
+    scale = 1; offsetX = 0; offsetY = 0; selectedRegion = null;
+    updateLegend();
+    document.getElementById('emptyState').style.display = 'block';
+    document.getElementById('panelContent').style.display = 'none';
+}
+
+function updateLegend() {
+    var legend = document.getElementById('mapLegend');
+    if (currentView === 'national') {
+        legend.innerHTML = '<div class="legend-title">圖例</div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#c23a2a;width:12px;height:12px;border-radius:0"></div><span>京畿（揚州）</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#b8342a;border-radius:0"></div><span>軍事重鎮</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#5a8a6a;border-radius:0"></div><span>經濟中心</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#8b6540;border-radius:0"></div><span>邊陲州郡</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#8b6540;width:20px;height:3px;border-radius:0"></div><span>河流</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#3a6b7c;width:20px;height:10px;border-radius:0;clip-path:polygon(10% 100%,20% 30%,35% 60%,50% 10%,65% 50%,80% 25%,90% 100%)"></div><span>山嶺</span></div>';
+    } else {
+        legend.innerHTML = '<div class="legend-title">圖例</div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#c23a2a;border-radius:0"></div><span>宮殿/寺院</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#8b6540;border-radius:0"></div><span>居民區</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#3a6b7c;border-radius:0"></div><span>商業區</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#8b6540;border-radius:0;opacity:.7"></div><span>手工業區</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#c23a2a;border-radius:0;width:8px;height:8px"></div><span>城門/要塞</span></div>' +
+            '<div class="legend-item"><div class="legend-dot" style="background:#8b6540;width:20px;height:4px;border-radius:0"></div><span>秦淮河</span></div>';
+    }
+}
+
+function updatePhaseUI() {
+    document.querySelectorAll('.phase-btn').forEach(function(btn) {
+        btn.classList.toggle('active', parseInt(btn.dataset.phase) === currentPhase);
+    });
+    document.getElementById('timelineDesc').textContent = PHASE_DESCS[currentPhase];
+}
+
+function setPhase(p) {
+    currentPhase = Math.max(0, Math.min(3, p));
+    updatePhaseUI();
+    if (selectedRegion && currentView === 'national') {
+        renderPanelBody(selectedRegion);
+    }
+}
+
+function updateUnlockHint() {
+    var hint = document.getElementById('unlockHint');
+    if (currentView === 'national' && hoveredRegion && hoveredRegion.id === 'yangzhou') {
+        var rect = canvas.getBoundingClientRect();
+        var sx = hoveredRegion.x * width * scale + offsetX + rect.left;
+        var sy = hoveredRegion.y * height * scale + offsetY + rect.top;
+        hint.style.left = (sx + 20) + 'px';
+        hint.style.top = (sy - 20) + 'px';
+        hint.classList.add('show');
+    } else {
+        hint.classList.remove('show');
+    }
+}
+
+// ========== 事件绑定 ==========
+canvas.addEventListener('mousedown', function (e) {
+    var rect = canvas.getBoundingClientRect();
+    lastX = e.clientX - rect.left; lastY = e.clientY - rect.top; isDragging = true;
+    var region = getRegionAt(lastX, lastY);
+    if (region) { selectedRegion = region; showRegionDetail(region); }
+});
+canvas.addEventListener('mousemove', function (e) {
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (isDragging) { offsetX += x - lastX; offsetY += y - lastY; lastX = x; lastY = y; }
+    else { hoveredRegion = getRegionAt(x, y); canvas.style.cursor = hoveredRegion ? 'pointer' : 'grab'; }
+    updateUnlockHint();
+});
+canvas.addEventListener('mouseup', function () { isDragging = false; });
+canvas.addEventListener('mouseleave', function () { isDragging = false; updateUnlockHint(); });
+canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left, y = e.clientY - rect.top;
+    var factor = e.deltaY < 0 ? 1.1 : 0.9;
+    var ns = Math.max(0.5, Math.min(4, scale * factor));
+    offsetX = x - (x - offsetX) * (ns / scale); offsetY = y - (y - offsetY) * (ns / scale); scale = ns;
+}, { passive: false });
+
+canvas.addEventListener('touchstart', function (e) {
+    e.preventDefault();
+    var touch = e.touches[0], rect = canvas.getBoundingClientRect();
+    lastX = touch.clientX - rect.left; lastY = touch.clientY - rect.top; isDragging = true;
+    var region = getRegionAt(lastX, lastY);
+    if (region) { selectedRegion = region; showRegionDetail(region); }
+}, { passive: false });
+canvas.addEventListener('touchmove', function (e) {
+    e.preventDefault();
+    if (isDragging && e.touches.length === 1) {
+        var touch = e.touches[0], rect = canvas.getBoundingClientRect();
+        var x = touch.clientX - rect.left, y = touch.clientY - rect.top;
+        offsetX += x - lastX; offsetY += y - lastY; lastX = x; lastY = y;
+    }
+}, { passive: false });
+canvas.addEventListener('touchend', function () { isDragging = false; });
+
+document.querySelectorAll('.view-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+        document.querySelectorAll('.view-tab').forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        currentView = tab.dataset.view;
+        document.getElementById('controlTitle').textContent = currentView === 'national' ? '南朝輿圖 · 蕭梁疆域' : '建康城圖 · 蕭梁京畿';
+        scale = 1; offsetX = 0; offsetY = 0; selectedRegion = null;
+        updateLegend();
+        document.getElementById('emptyState').style.display = 'block';
+        document.getElementById('panelContent').style.display = 'none';
+    });
+});
+
+document.getElementById('zoomIn').addEventListener('click', function () { scale = Math.min(4, scale * 1.2); });
+document.getElementById('zoomOut').addEventListener('click', function () { scale = Math.max(0.5, scale / 1.2); });
+document.getElementById('zoomReset').addEventListener('click', function () { scale = 1; offsetX = 0; offsetY = 0; });
+
+// 时间轴按钮
+document.querySelectorAll('.phase-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { setPhase(parseInt(btn.dataset.phase)); });
+});
+document.getElementById('phasePrev').addEventListener('click', function() { setPhase(currentPhase - 1); });
+document.getElementById('phaseNext').addEventListener('click', function() { setPhase(currentPhase + 1); });
+
+// 信息面板标签页
+document.querySelectorAll('.panel-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+        panelTab = tab.dataset.ptab;
+        updatePanelTabs();
+        if (selectedRegion) renderPanelBody(selectedRegion);
+    });
+});
+
+// 迷你地图点击导航
+document.getElementById('minimapWrap').addEventListener('click', function(e) {
+    if (currentView !== 'national') return;
+    var rect = miniCanvas.getBoundingClientRect();
+    var mx = (e.clientX - rect.left) / miniW;
+    var my = (e.clientY - rect.top) / miniH;
+    // 寻找最近的州
+    var nearest = null, minD = Infinity;
+    for (var i = 0; i < nationalStates.length; i++) {
+        var s = nationalStates[i];
+        var d = Math.sqrt((mx - s.x) * (mx - s.x) + (my - s.y) * (my - s.y));
+        if (d < minD) { minD = d; nearest = s; }
+    }
+    if (nearest) {
+        selectedRegion = nearest;
+        offsetX = width / 2 - nearest.x * width * scale;
+        offsetY = height / 2 - nearest.y * height * scale;
+        showRegionDetail(nearest);
+    }
+});
+
+// ========== 动画循环 ==========
+function animate(time) {
+    render(time);
+    requestAnimationFrame(animate);
+}
+
+// ========== 初始化 ==========
+resize();
+updateLegend();
+updatePhaseUI();
+requestAnimationFrame(animate);
+setTimeout(function () { resize(); }, 200);
+window.addEventListener('resize', function () { resize(); });
+</script>
+</body>
+</html>

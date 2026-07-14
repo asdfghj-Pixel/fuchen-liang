@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮沉梁 · 职场社会关系网络</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:#1a1510;
+  color:#d4c4a8;
+  font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;
+  overflow:hidden;
+  width:100vw; height:100vh;
+}
+
+/* 顶部标题栏 */
+#header {
+  position:absolute; left:0; top:0;
+  width:calc(100% - 340px); height:52px;
+  background:linear-gradient(90deg,#2a1810,#3a2518);
+  border-bottom:1px solid #8b6914;
+  display:flex; align-items:center;
+  padding:0 24px; z-index:10;
+}
+#header h1 {
+  font-size:18px; color:#e8d5a3;
+  letter-spacing:4px; font-weight:400;
+}
+#header .subtitle {
+  margin-left:16px; font-size:12px; color:#8b7355;
+}
+#header .controls {
+  margin-left:auto; display:flex; gap:12px; align-items:center;
+}
+#header .ctrl-btn {
+  background:#3a2a1a; border:1px solid #8b6914;
+  color:#d4c4a8; padding:4px 12px; border-radius:3px;
+  cursor:pointer; font-size:12px; transition:all .2s;
+}
+#header .ctrl-btn:hover { background:#4a3a2a; color:#e8d5a3; }
+
+/* 画布区域 */
+#canvas-wrap {
+  position:absolute; left:0; top:52px;
+  width:calc(100% - 340px); height:calc(100% - 52px);
+  background:radial-gradient(ellipse at center,#221a12 0%,#1a1510 100%);
+}
+canvas { display:block; width:100%; height:100%; cursor:grab; }
+canvas:active { cursor:grabbing; }
+
+/* 右侧面板 */
+#side-panel {
+  position:absolute; right:0; top:0;
+  width:340px; height:100%;
+  background:#231a12;
+  border-left:2px solid #8b6914;
+  display:flex; flex-direction:column;
+  z-index:20;
+}
+
+/* 筛选区 */
+#filter-area {
+  padding:16px; border-bottom:1px solid #3a2a1a;
+}
+#filter-area h3 {
+  font-size:14px; color:#e8d5a3; margin-bottom:10px;
+  font-weight:400; letter-spacing:2px;
+}
+.filter-group { margin-bottom:8px; }
+.filter-group label {
+  font-size:12px; color:#a09070; cursor:pointer;
+  display:flex; align-items:center; gap:6px;
+}
+.filter-group input[type="checkbox"] {
+  accent-color:#8b6914; cursor:pointer;
+}
+.filter-row { display:flex; flex-wrap:wrap; gap:8px; }
+
+/* 详情区 */
+#detail-area {
+  flex:1; overflow-y:auto; padding:16px;
+}
+#detail-placeholder {
+  text-align:center; color:#5a4a3a; padding-top:60px;
+  font-size:13px; line-height:2;
+}
+.detail-card {
+  background:#2a1f14; border:1px solid #3a2a1a;
+  border-radius:4px; padding:14px; margin-bottom:12px;
+}
+.detail-card h4 {
+  font-size:14px; color:#e8d5a3; margin-bottom:8px;
+  border-bottom:1px solid #3a2a1a; padding-bottom:6px;
+}
+.detail-card .field {
+  font-size:12px; line-height:1.8; color:#b0a080;
+}
+.detail-card .field strong { color:#d4c4a8; }
+.detail-card .tag {
+  display:inline-block; padding:2px 8px; border-radius:3px;
+  font-size:11px; margin-right:6px; margin-top:4px;
+}
+
+/* 图例区 */
+#legend-area {
+  padding:12px 16px; border-top:1px solid #3a2a1a;
+  background:#1e1610;
+}
+#legend-area h4 {
+  font-size:12px; color:#a09070; margin-bottom:8px;
+}
+.legend-item {
+  display:flex; align-items:center; gap:8px;
+  font-size:11px; color:#8a7a60; margin-bottom:5px;
+}
+.legend-dot {
+  width:10px; height:10px; border-radius:50%;
+  flex-shrink:0;
+}
+.legend-line {
+  width:20px; height:2px; flex-shrink:0;
+}
+.legend-line.dashed {
+  height:0; border-top:2px dashed;
+}
+
+/* 提示浮层 */
+#tooltip {
+  position:absolute; pointer-events:none;
+  background:rgba(30,22,14,0.95);
+  border:1px solid #8b6914; border-radius:4px;
+  padding:8px 12px; font-size:12px; color:#d4c4a8;
+  display:none; z-index:100; max-width:220px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+}
+
+/* 关系筛选标签 */
+.rel-filter { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.rel-tag {
+  padding:3px 8px; border-radius:3px; font-size:11px;
+  cursor:pointer; border:1px solid transparent;
+  transition:all .2s;
+}
+.rel-tag.active { border-color:#8b6914; }
+.rel-tag.inactive { opacity:0.35; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>浮沉梁</h1>
+  <span class="subtitle">职场社会关系网络 · 以南朝官场为镜</span>
+  <div class="controls">
+    <button class="ctrl-btn" onclick="resetView()">重置视角</button>
+    <button class="ctrl-btn" onclick="togglePhysics()">暂停/继续</button>
+  </div>
+</div>
+
+<div id="canvas-wrap">
+  <canvas id="networkCanvas"></canvas>
+</div>
+
+<div id="side-panel">
+  <div id="filter-area">
+    <h3>关系筛选</h3>
+    <div class="rel-filter" id="relFilters"></div>
+    <h3 style="margin-top:12px;">节点类型</h3>
+    <div class="filter-row" id="nodeFilters"></div>
+  </div>
+  <div id="detail-area">
+    <div id="detail-placeholder">
+      点击节点查看人物详情<br>
+      拖拽节点调整布局<br>
+      滚轮缩放画布
+    </div>
+    <div id="detail-content" style="display:none;"></div>
+  </div>
+  <div id="legend-area">
+    <h4>图例 · 职场关系为主</h4>
+    <div id="legend-content"></div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+/* ===================== 配置 ===================== */
+const CONFIG = {
+  nodeRadius: { player:22, emperor:20, superior:16, peer:14, subordinate:12, enemy:14, patron:15, family:10, hometown:9 },
+  colors: {
+    player:    '#d4a843',
+    emperor:   '#c0392b',
+    superior:  '#2980b9',
+    peer:      '#27ae60',
+    subordinate:'#5dade2',
+    enemy:     '#a93226',
+    patron:    '#8e44ad',
+    family:    '#7f8c8d',
+    hometown:  '#95a5a6'
+  },
+  edgeColors: {
+    patronage: '#d4a843',
+    hierarchy: '#2980b9',
+    peer:      '#27ae60',
+    enemy:     '#a93226',
+    family:    '#7f8c8d',
+    hometown:  '#95a5a6'
+  },
+  forces: { repulsion:800, spring:0.008, springLen:140, damping:0.85, center:0.0003 }
+};
+
+/* ===================== 数据 ===================== */
+// 节点类型: player玩家, emperor皇帝, superior上级, peer同僚, subordinate下属, enemy政敌, patron举荐者, family家族, hometown同乡
+const nodes = [
+  { id:'player', name:'你', title:'参军（寒门出身）', type:'player', desc:'杂佐出身，从萧衍起兵，累功至参军。无背景，无靠山，每一步都踩在刀尖上。', era:'齐末梁初' },
+  { id:'xiaoyan', name:'萧衍', title:'梁武帝（高祖）', type:'emperor', desc:'南朝梁开国皇帝，在位四十八年。晚年崇佛，侯景之乱中饿死台城。', era:'齐末-梁' },
+  { id:'wangmao', name:'王茂', title:'护军将军', type:'superior', desc:'从萧衍起兵前驱，钟离之战功臣，累迁至司空。你的直属上司。', era:'齐末-梁' },
+  { id:'caojingzong', name:'曹景宗', title:'散骑常侍、右卫将军', type:'peer', desc:'骁勇善战，钟离之战大破北魏。性躁动，嗜酒好乐，与你同僚。', era:'齐末-梁' },
+  { id:'lvsengzhen', name:'吕僧珍', title:'领军将军', type:'peer', desc:'起自寒贱，萧衍心腹。恭慎守节，不私亲戚。你的寒门榜样。', era:'齐末-梁' },
+  { id:'zhengshaoshu', name:'郑绍叔', title:'卫尉卿', type:'peer', desc:'忠于萧衍，善则称君、过则归己。与你有同僚之谊。', era:'齐末-梁' },
+  { id:'liuqingyuan', name:'柳庆远', title:'雍州刺史', type:'peer', desc:'萧衍谋主，帷幄赞画。衣锦还乡，病逝于任。', era:'齐末-梁' },
+  { id:'zhanghongce', name:'张弘策', title:'卫尉卿（已故）', type:'patron', desc:'萧衍舅父，从起兵，遇盗被害。曾引荐你于萧衍。', era:'齐末-梁初' },
+  { id:'xiaoyingda', name:'萧颖达', title:'征虏将军', type:'enemy', desc:'宗室之贵，参与义举。因鱼税被劾，声名有损。与你利益冲突。', era:'齐末-梁' },
+  { id:'men1', name:'门生甲', title:'队主', type:'subordinate', desc:'寒门子弟，随你从军。视你为恩主。', era:'梁' },
+  { id:'men2', name:'门生乙', title:'行参军', type:'subordinate', desc:'低级士族出身，从你习兵法。', era:'梁' },
+  { id:'buqu', name:'部曲丙', title:'亲兵', type:'subordinate', desc:'乡里子弟，随你征战多年。', era:'梁' },
+  { id:'mother', name:'母亲', title:'农家妇', type:'family', desc:'居于乡野，每闻你从军，日夜忧心。曾言：贫贱家儿忽得富贵，讵可久保？', era:'-' },
+  { id:'brother', name:'兄长', title:'农民', type:'family', desc:'守家业于乡里，不支持你从军，但默默接济母亲。', era:'-' },
+  { id:'tongxiang1', name:'同乡甲', title:'商人', type:'hometown', desc:'建康城中小商贩，偶尔为你传递消息。', era:'-' },
+  { id:'tongxiang2', name:'同乡乙', title:'手工业者', type:'hometown', desc:'铁匠，曾为你修补兵器。', era:'-' },
+  { id:'renfang', name:'任昉', title:'御史中丞', type:'peer', desc:'文学家，以弹劾权贵闻名。曾劾萧颖达鱼税案。与你无直接冲突，但需小心。', era:'梁' },
+  { id:'xuwei', name:'韦睿', title:'车骑将军', type:'superior', desc:'钟离之战主帅，与曹景宗配合大破北魏。为人谦和，受萧衍敬重。', era:'梁' },
+  { id:'fengdaogen', name:'冯道根', title:'豫州刺史', type:'peer', desc:'寒门出身，家贫佣赁养母。口不论勋，被比"大树将军"。你的寒门战友。', era:'梁' },
+  { id:'houjing', name:'侯景', title:'河南王（叛将）', type:'enemy', desc:'北镇戍兵出身，反复无常。太清二年反，攻陷台城。后期成为你的死敌。', era:'梁末' }
+];
+
+const edges = [
+  { from:'player', to:'xiaoyan', type:'hierarchy', label:'君臣' },
+  { from:'wangmao', to:'player', type:'hierarchy', label:'直属上司' },
+  { from:'zhanghongce', to:'player', type:'patronage', label:'举荐' },
+  { from:'player', to:'men1', type:'hierarchy', label:'提携' },
+  { from:'player', to:'men2', type:'hierarchy', label:'提携' },
+  { from:'player', to:'buqu', type:'hierarchy', label:'统领' },
+  { from:'player', to:'caojingzong', type:'peer', label:'同僚' },
+  { from:'player', to:'lvsengzhen', type:'peer', label:'同僚（寒门互助）' },
+  { from:'player', to:'zhengshaoshu', type:'peer', label:'同僚' },
+  { from:'player', to:'liuqingyuan', type:'peer', label:'同僚' },
+  { from:'player', to:'fengdaogen', type:'peer', label:'寒门战友' },
+  { from:'player', to:'xiaoyingda', type:'enemy', label:'政敌（利益冲突）' },
+  { from:'player', to:'houjing', type:'enemy', label:'死敌（后期）' },
+  { from:'player', to:'mother', type:'family', label:'母子' },
+  { from:'player', to:'brother', type:'family', label:'兄弟' },
+  { from:'player', to:'tongxiang1', type:'hometown', label:'同乡' },
+  { from:'player', to:'tongxiang2', type:'hometown', label:'同乡' },
+  { from:'caojingzong', to:'lvsengzhen', type:'peer', label:'协同作战' },
+  { from:'caojingzong', to:'fengdaogen', type:'peer', label:'钟离之战同袍' },
+  { from:'wangmao', to:'caojingzong', type:'peer', label:'共破朱雀门' },
+  { from:'wangmao', to:'xiaoyingda', type:'peer', label:'宗室同僚' },
+  { from:'xiaoyan', to:'zhanghongce', type:'family', label:'舅甥（已亡）' },
+  { from:'xiaoyan', to:'wangmao', type:'hierarchy', label:'君臣' },
+  { from:'xiaoyan', to:'lvsengzhen', type:'hierarchy', label:'君臣（心腹）' },
+  { from:'xuwei', to:'caojingzong', type:'hierarchy', label:'节制（钟离之战）' },
+  { from:'xuwei', to:'fengdaogen', type:'hierarchy', label:'节制' },
+  { from:'renfang', to:'xiaoyingda', type:'enemy', label:'弹劾（鱼税案）' },
+  { from:'mother', to:'brother', type:'family', label:'母子' },
+  { from:'tongxiang1', to:'tongxiang2', type:'hometown', label:'同乡' }
+];
+
+/* ===================== 类型标签配置 ===================== */
+const TYPE_LABELS = {
+  player:'你（玩家）', emperor:'最高权力', superior:'直接上级', peer:'同僚', subordinate:'下属/门生',
+  enemy:'政敌/对手', patron:'举荐者/恩人', family:'家族（次要）', hometown:'同乡（次要）'
+};
+const REL_LABELS = {
+  patronage:'举荐关系', hierarchy:'上下级关系', peer:'同僚关系', enemy:'政敌关系', family:'家族关系', hometown:'同乡关系'
+};
+
+/* ===================== Canvas 设置 ===================== */
+const canvas = document.getElementById('networkCanvas');
+const ctx = canvas.getContext('2d');
+let width, height, dpr;
+
+function resize() {
+  const wrap = document.getElementById('canvas-wrap');
+  width = wrap.clientWidth;
+  height = wrap.clientHeight;
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+/* ===================== 物理引擎 ===================== */
+let physicsOn = true;
+const nodeMap = {};
+nodes.forEach((n,i)=>{
+  n.x = width/2 + (Math.random()-0.5)*200;
+  n.y = height/2 + (Math.random()-0.5)*200;
+  n.vx = 0; n.vy = 0;
+  n.radius = CONFIG.nodeRadius[n.type] || 12;
+  n.color = CONFIG.colors[n.type] || '#999';
+  n.fixed = false;
+  nodeMap[n.id] = n;
+});
+
+const edgeList = edges.map(e=>({...e, fromNode:nodeMap[e.from], toNode:nodeMap[e.to]}));
+
+function updatePhysics() {
+  if(!physicsOn) return;
+  const f = CONFIG.forces;
+  // 斥力
+  for(let i=0;i<nodes.length;i++){
+    for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i], b=nodes[j];
+      let dx=b.x-a.x, dy=b.y-a.y;
+      let dist=Math.sqrt(dx*dx+dy*dy)||1;
+      if(dist<300){
+        const force = f.repulsion / (dist*dist);
+        const fx = (dx/dist)*force, fy = (dy/dist)*force;
+        if(!a.fixed){ a.vx-=fx; a.vy-=fy; }
+        if(!b.fixed){ b.vx+=fx; b.vy+=fy; }
+      }
+    }
+  }
+  // 弹簧力
+  edgeList.forEach(e=>{
+    const a=e.fromNode, b=e.toNode;
+    let dx=b.x-a.x, dy=b.y-a.y;
+    let dist=Math.sqrt(dx*dx+dy*dy)||1;
+    const target = (a.type==='player'||b.type==='player') ? f.springLen*0.7 : f.springLen;
+    const force = (dist-target)*f.spring;
+    const fx=(dx/dist)*force, fy=(dy/dist)*force;
+    if(!a.fixed){ a.vx+=fx; a.vy+=fy; }
+    if(!b.fixed){ b.vx-=fx; b.vy-=fy; }
+  });
+  // 中心引力
+  nodes.forEach(n=>{
+    if(n.fixed) return;
+    n.vx += (width/2 - n.x)*f.center;
+    n.vy += (height/2 - n.y)*f.center;
+    n.vx *= f.damping;
+    n.vy *= f.damping;
+    n.x += n.vx;
+    n.y += n.vy;
+    n.x = Math.max(n.radius, Math.min(width-n.radius, n.x));
+    n.y = Math.max(n.radius, Math.min(height-n.radius, n.y));
+  });
+}
+
+/* ===================== 渲染 ===================== */
+let scale=1, offsetX=0, offsetY=0;
+let hoverNode=null, selectedNode=null;
+
+function worldToScreen(x,y){ return {x:x*scale+offsetX, y:y*scale+offsetY}; }
+function screenToWorld(x,y){ return {x:(x-offsetX)/scale, y:(y-offsetY)/scale}; }
+
+function draw() {
+  ctx.clearRect(0,0,width,height);
+  ctx.save();
+  ctx.translate(offsetX, offsetY);
+  ctx.scale(scale, scale);
+
+  // 画边
+  edgeList.forEach(e=>{
+    if(!isRelVisible(e.type)) return;
+    const a=e.fromNode, b=e.toNode;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    const color = CONFIG.edgeColors[e.type];
+    ctx.strokeStyle = color;
+    ctx.lineWidth = (e.type==='patronage'||e.type==='enemy') ? 2.5 : 1.5;
+    if(e.type==='peer'||e.type==='enemy'||e.type==='hometown'){
+      ctx.setLineDash([6,4]);
+    } else {
+      ctx.setLineDash([]);
+    }
+    ctx.globalAlpha = (e.type==='family'||e.type==='hometown') ? 0.5 : 0.75;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    // 关系标签
+    if(scale>0.7){
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      ctx.fillStyle = color;
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.globalAlpha = 0.7;
+      ctx.fillText(e.label, mx, my-3);
+      ctx.globalAlpha = 1;
+    }
+  });
+
+  // 画节点
+  nodes.forEach(n=>{
+    if(!isNodeVisible(n.type)) return;
+    const r=n.radius;
+    // 光晕
+    if(n.type==='player'||n.type==='emperor'){
+      const grd=ctx.createRadialGradient(n.x,n.y,r*0.5,n.x,n.y,r*2.5);
+      grd.addColorStop(0,n.color+'40');
+      grd.addColorStop(1,n.color+'00');
+      ctx.fillStyle=grd;
+      ctx.beginPath(); ctx.arc(n.x,n.y,r*2.5,0,Math.PI*2); ctx.fill();
+    }
+    // 选中高亮
+    if(n===selectedNode){
+      ctx.beginPath(); ctx.arc(n.x,n.y,r+6,0,Math.PI*2);
+      ctx.strokeStyle='#e8d5a3'; ctx.lineWidth=2; ctx.stroke();
+    }
+    // 节点本体
+    ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2);
+    ctx.fillStyle=n.color; ctx.fill();
+    // 边框
+    ctx.strokeStyle=(n===hoverNode)?'#e8d5a3':(n.color+'88');
+    ctx.lineWidth=(n===hoverNode)?2:1;
+    ctx.stroke();
+    // 名字
+    if(scale>0.55){
+      ctx.fillStyle='#e8d5a3';
+      ctx.font=(n.type==='player'||n.type==='emperor')?'bold 13px sans-serif':'12px sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(n.name, n.x, n.y+r+16);
+      if(n.type!=='family'&&n.type!=='hometown'){
+        ctx.fillStyle='#a09070';
+        ctx.font='10px sans-serif';
+        ctx.fillText(n.title, n.x, n.y+r+28);
+      }
+    }
+  });
+
+  ctx.restore();
+  requestAnimationFrame(draw);
+}
+
+/* ===================== 交互 ===================== */
+let dragging=null, dragStartX, dragStartY;
+
+function getMousePos(evt){
+  const rect=canvas.getBoundingClientRect();
+  return {x:evt.clientX-rect.left, y:evt.clientY-rect.top};
+}
+
+function findNode(mx,my){
+  const w=screenToWorld(mx,my);
+  for(let i=nodes.length-1;i>=0;i--){
+    const n=nodes[i];
+    if(!isNodeVisible(n.type)) continue;
+    const dx=w.x-n.x, dy=w.y-n.y;
+    if(Math.sqrt(dx*dx+dy*dy)<=n.radius+4) return n;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousemove',e=>{
+  const pos=getMousePos(e);
+  if(dragging){
+    const w=screenToWorld(pos.x, pos.y);
+    dragging.x=w.x; dragging.y=w.y;
+    dragging.vx=0; dragging.vy=0;
+  } else {
+    const n=findNode(pos.x, pos.y);
+    if(n!==hoverNode){
+      hoverNode=n;
+      canvas.style.cursor=n?'pointer':'grab';
+      if(n) showTooltip(e.clientX, e.clientY, n);
+      else hideTooltip();
+    } else if(n){
+      moveTooltip(e.clientX, e.clientY);
+    }
+  }
+});
+
+canvas.addEventListener('mousedown',e=>{
+  const pos=getMousePos(e);
+  const n=findNode(pos.x, pos.y);
+  if(n){ dragging=n; n.fixed=true; canvas.style.cursor='grabbing'; }
+  else { dragStartX=pos.x; dragStartY=pos.y; }
+});
+
+canvas.addEventListener('mouseup',e=>{
+  if(dragging){ dragging.fixed=false; dragging=null; }
+  const pos=getMousePos(e);
+  if(Math.abs(pos.x-dragStartX)<5 && Math.abs(pos.y-dragStartY)<5){
+    const n=findNode(pos.x, pos.y);
+    if(n){ selectNode(n); }
+    else { selectedNode=null; clearDetail(); }
+  }
+});
+
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const pos=getMousePos(e);
+  const factor = e.deltaY<0 ? 1.1 : 0.9;
+  const newScale = Math.max(0.3, Math.min(3, scale*factor));
+  const w=screenToWorld(pos.x, pos.y);
+  offsetX = pos.x - w.x*newScale;
+  offsetY = pos.y - w.y*newScale;
+  scale = newScale;
+},{passive:false});
+
+/* ===================== Tooltip ===================== */
+const tooltip=document.getElementById('tooltip');
+function showTooltip(cx,cy,n){
+  tooltip.innerHTML=`<strong style="color:${n.color}">${n.name}</strong> <span style="color:#a09070">${n.title}</span><br><span style="color:#8a7a60;font-size:11px">${TYPE_LABELS[n.type]}</span>`;
+  tooltip.style.display='block';
+  moveTooltip(cx,cy);
+}
+function moveTooltip(cx,cy){
+  tooltip.style.left=(cx+12)+'px';
+  tooltip.style.top=(cy+12)+'px';
+}
+function hideTooltip(){ tooltip.style.display='none'; }
+
+/* ===================== 详情面板 ===================== */
+function selectNode(n){
+  selectedNode=n;
+  const placeholder=document.getElementById('detail-placeholder');
+  const content=document.getElementById('detail-content');
+  placeholder.style.display='none';
+  content.style.display='block';
+
+  // 找出关联关系
+  const rels=edgeList.filter(e=>e.from===n.id||e.to===n.id);
+  const relHtml = rels.map(e=>{
+    const other = e.from===n.id ? e.toNode : e.fromNode;
+    const relType = REL_LABELS[e.type];
+    return `<div class="field" style="margin-bottom:4px"><span style="color:${CONFIG.edgeColors[e.type]}">●</span> <strong>${other.name}</strong>（${other.title}）— ${e.label}</div>`;
+  }).join('');
+
+  const typeColor = CONFIG.colors[n.type];
+  content.innerHTML = `
+    <div class="detail-card">
+      <h4><span style="color:${typeColor}">●</span> ${n.name}</h4>
+      <div class="field"><strong>身份：</strong>${n.title}</div>
+      <div class="field"><strong>类型：</strong>${TYPE_LABELS[n.type]}</div>
+      <div class="field"><strong>时代：</strong>${n.era}</div>
+      <div class="field" style="margin-top:8px;color:#b0a080;line-height:1.8">${n.desc}</div>
+    </div>
+    <div class="detail-card">
+      <h4>关系网络（${rels.length}条）</h4>
+      ${relHtml}
+    </div>
+  `;
+}
+
+function clearDetail(){
+  document.getElementById('detail-placeholder').style.display='block';
+  document.getElementById('detail-content').style.display='none';
+}
+
+/* ===================== 筛选控件 ===================== */
+const activeRels = new Set(['patronage','hierarchy','peer','enemy','family','hometown']);
+const activeNodes = new Set(['player','emperor','superior','peer','subordinate','enemy','patron','family','hometown']);
+
+function isRelVisible(type){ return activeRels.has(type); }
+function isNodeVisible(type){ return activeNodes.has(type); }
+
+function initFilters(){
+  const relContainer=document.getElementById('relFilters');
+  Object.entries(REL_LABELS).forEach(([key,label])=>{
+    const tag=document.createElement('span');
+    tag.className='rel-tag active';
+    tag.style.background=CONFIG.edgeColors[key]+'22';
+    tag.style.color=CONFIG.edgeColors[key];
+    tag.style.borderColor=CONFIG.edgeColors[key];
+    tag.textContent=label;
+    tag.onclick=()=>{
+      if(activeRels.has(key)){ activeRels.delete(key); tag.className='rel-tag inactive'; }
+      else { activeRels.add(key); tag.className='rel-tag active'; }
+    };
+    relContainer.appendChild(tag);
+  });
+
+  const nodeContainer=document.getElementById('nodeFilters');
+  Object.entries(TYPE_LABELS).forEach(([key,label])=>{
+    const lbl=document.createElement('label');
+    lbl.innerHTML=`<input type="checkbox" checked> <span style="color:${CONFIG.colors[key]}">●</span> ${label}`;
+    lbl.querySelector('input').onchange=function(){
+      if(this.checked) activeNodes.add(key); else activeNodes.delete(key);
+    };
+    nodeContainer.appendChild(lbl);
+  });
+}
+
+/* ===================== 图例 ===================== */
+function initLegend(){
+  const container=document.getElementById('legend-content');
+  // 节点图例
+  const nodeLegend=document.createElement('div');
+  nodeLegend.style.marginBottom='10px';
+  Object.entries(TYPE_LABELS).forEach(([key,label])=>{
+    const item=document.createElement('div');
+    item.className='legend-item';
+    item.innerHTML=`<span class="legend-dot" style="background:${CONFIG.colors[key]}"></span>${label}`;
+    nodeLegend.appendChild(item);
+  });
+  container.appendChild(nodeLegend);
+  // 关系图例
+  Object.entries(REL_LABELS).forEach(([key,label])=>{
+    const item=document.createElement('div');
+    item.className='legend-item';
+    const isDashed = (key==='peer'||key==='enemy'||key==='hometown');
+    item.innerHTML=`<span class="legend-line ${isDashed?'dashed':''}" style="${isDashed?'border-color':'background'}:${CONFIG.edgeColors[key]}"></span>${label}`;
+    container.appendChild(item);
+  });
+}
+
+/* ===================== 控制 ===================== */
+function resetView(){
+  scale=1; offsetX=0; offsetY=0;
+  nodes.forEach(n=>{
+    n.x=width/2+(Math.random()-0.5)*200;
+    n.y=height/2+(Math.random()-0.5)*200;
+    n.vx=0; n.vy=0;
+  });
+}
+function togglePhysics(){ physicsOn=!physicsOn; }
+
+/* ===================== 启动 ===================== */
+initFilters();
+initLegend();
+setInterval(updatePhysics, 16);
+draw();
+</script>
+</body>
+</html>

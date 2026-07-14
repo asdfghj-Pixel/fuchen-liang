@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>浮沉梁 · 资料馆</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="game-header">
+    <div class="game-title">资料馆 · 南朝风物</div>
+    <div class="game-nav">
+      <button onclick="goHome()" class="btn btn-outline">返回主页</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="content-wrapper" style="max-width: 1200px;">
+      <header class="main-header" style="margin-bottom: 40px;">
+        <h1 class="title" style="font-size: 36px;">资料馆</h1>
+        <p class="subtitle">南朝宋末至梁末 · 历史与文化</p>
+      </header>
+
+      <div class="mode-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div onclick="openMap()" class="mode-card">
+          <div class="mode-icon">🗺️</div>
+          <h4>南朝地理地图</h4>
+          <p class="mode-desc">交互式地图，探索南朝疆域</p>
+        </div>
+        <div onclick="openSocialNetwork()" class="mode-card">
+          <div class="mode-icon">🌐</div>
+          <h4>社会关系网络</h4>
+          <p class="mode-desc">城市与农村的社会网络</p>
+        </div>
+        <div onclick="openCareerNetwork()" class="mode-card">
+          <div class="mode-icon">🏛️</div>
+          <h4>官场关系网络</h4>
+          <p class="mode-desc">职场NPC动态关系</p>
+        </div>
+        <div onclick="openOfficialRanks()" class="mode-card">
+          <div class="mode-icon">📜</div>
+          <h4>官制等级</h4>
+          <p class="mode-desc">宋齐梁官制演变</p>
+        </div>
+        <div onclick="openPerspectiveFlow()" class="mode-card">
+          <div class="mode-icon">👁️</div>
+          <h4>视角流转</h4>
+          <p class="mode-desc">多视角叙事可视化</p>
+        </div>
+        <div onclick="openGameGuide()" class="mode-card">
+          <div class="mode-icon">📖</div>
+          <h4>游戏指引</h4>
+          <p class="mode-desc">规则速览与新手引导</p>
+        </div>
+      </div>
+
+      <div class="game-card" style="margin-top: 40px;">
+        <div class="game-card-title">结局图鉴</div>
+        <div id="ending-collection"></div>
+      </div>
+
+      <div class="game-card">
+        <div class="game-card-title">成就系统</div>
+        <div class="relation-network" id="achievements"></div>
+      </div>
+
+      <footer class="main-footer" style="margin-top: 40px;">
+        <p>南朝宋末至梁末 · 历史生活模拟器</p>
+      </footer>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Utils.load();
+      renderUnlockedEndings();
+      renderAchievements();
+    });
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    function openMap() {
+      window.open('南朝地理空间交互地图-v5.html', '_blank');
+    }
+
+    function openSocialNetwork() {
+      window.open('社会关系网络可视化Demo.html', '_blank');
+    }
+
+    function openCareerNetwork() {
+      window.open('职场模式社会关系网络Demo.html', '_blank');
+    }
+
+    function openOfficialRanks() {
+      window.open('浮沉梁-官制等级可视化.html', '_blank');
+    }
+
+    function openPerspectiveFlow() {
+      window.open('视角流转可视化Demo.html', '_blank');
+    }
+
+    function openGameGuide() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 600px;">
+          <h2 class="modal-title">游戏指引</h2>
+          <div style="text-align: left; margin-bottom: 24px; font-family: var(--font-title); line-height: 1.8;">
+            <p><strong>◆ 时间：</strong>南朝宋末至梁末（479-555年）</p>
+            <p><strong>◆ 玩法：</strong>在历史事件中做选择，影响命运</p>
+            <p><strong>◆ 模式：</strong>双轨并行（城乡生活 + 官场仕途）</p>
+            <p><strong>◆ 职场关键数值：</strong></p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              <li><strong style="color: var(--color-military)">军功</strong>：军事才能和战场表现</li>
+              <li><strong style="color: var(--color-civil)">文治</strong>：政务能力和学识</li>
+              <li><strong style="color: var(--color-guanxi)">人情</strong>：官场上的人际关系</li>
+            </ul>
+            <p><strong>◆ 娱乐关键数值：</strong></p>
+            <ul style="margin-left: 20px; margin-top: 8px;">
+              <li><strong style="color: var(--color-money)">银钱</strong>：经济实力</li>
+              <li><strong style="color: var(--color-food)">粮食</strong>：生存保障</li>
+              <li><strong>声望</strong>：社会地位</li>
+            </ul>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" class="btn btn-primary">关闭</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function renderUnlockedEndings() {
+      const container = document.getElementById('ending-collection');
+      container.innerHTML = '';
+
+      const endings = GameData.endings;
+      const unlocked = GameState.shared.unlockedEndings || [];
+
+      const endingCategories = [
+        { name: '基础结局', types: ['A', 'B', 'C', 'D', 'E', 'F', 'G'] },
+        { name: '随机结局', types: ['H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q'] }
+      ];
+
+      endingCategories.forEach(category => {
+        const catTitle = document.createElement('h4');
+        catTitle.style = 'color: var(--accent-gold-light); margin: 20px 0 10px; font-size: 18px; font-family: var(--font-title);';
+        catTitle.textContent = category.name;
+        container.appendChild(catTitle);
+
+        const grid = document.createElement('div');
+        grid.style = 'display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;';
+
+        category.types.forEach(type => {
+          const ending = endings[type];
+          if (!ending) return;
+
+          const isUnlocked = unlocked.includes(type);
+          const card = document.createElement('div');
+          card.style = `
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid ${isUnlocked ? 'var(--border-secondary)' : '#3d2a1a'};
+            background: ${isUnlocked ? 'var(--bg-secondary)' : 'rgba(45, 31, 20, 0.5)'};
+            cursor: pointer;
+            transition: all 0.3s ease;
+          `;
+
+          if (isUnlocked) {
+            card.onclick = () => showEndingDetail(type);
+          }
+
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 600; color: ${isUnlocked ? 'var(--text-primary)' : '#666'};">${type}. ${ending.name}</span>
+              <span style="font-size: 12px; color: ${isUnlocked ? '#27ae60' : '#666'};">${isUnlocked ? '已解锁' : '???'}</span>
+            </div>
+            <div style="font-size: 12px; color: ${isUnlocked ? 'var(--text-secondary)' : '#444'};">
+              ${isUnlocked ? ending.trigger : '达成条件未知'}
+            </div>
+          `;
+
+          grid.appendChild(card);
+        });
+
+        container.appendChild(grid);
+      });
+
+      const count = document.createElement('p');
+      count.style = 'color: var(--text-secondary); margin-top: 20px; font-size: 14px;';
+      count.textContent = `已解锁 ${unlocked.length}/17 种结局`;
+      container.appendChild(count);
+    }
+
+    function showEndingDetail(type) {
+      const ending = GameData.endings[type];
+      if (!ending) return;
+
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px; max-height: 80vh; overflow-y: auto;">
+          <h2 class="modal-title">${type}. ${ending.name}</h2>
+          <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 6px;">
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">触发条件</div>
+            <div style="font-size: 14px;">${ending.trigger}</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">【结局】</div>
+            <div style="font-size: 15px; line-height: 1.8;">${ending.narrative}</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">【史臣评价】</div>
+            <div style="font-size: 15px; line-height: 1.8; font-style: italic;">${ending.shichen}</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">【官方评价】</div>
+            <div style="font-size: 15px; line-height: 1.8;">${ending.official}</div>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">【现代社会生活启示】</div>
+            <div style="font-size: 15px; line-height: 1.8;">${ending.modern}</div>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" class="btn btn-primary">关闭</button>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function renderAchievements() {
+      const container = document.getElementById('achievements');
+      container.innerHTML = '';
+
+      const achievements = GameData.achievements;
+      const earned = GameState.shared.achievements || [];
+
+      if (earned.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted);">暂无成就，努力解锁吧！</p>';
+        return;
+      }
+
+      for (const name of earned) {
+        const achievement = achievements[name];
+        if (achievement) {
+          const tag = document.createElement('span');
+          tag.className = 'relation-tag relation-soulmate';
+          tag.textContent = name + ' · ' + achievement.desc;
+          container.appendChild(tag);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

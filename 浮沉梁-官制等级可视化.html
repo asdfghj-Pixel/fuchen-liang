@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>南朝官制等级可视化 - 浮沉梁</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #1a0f0a;
+            --bg-card: #2a1b12;
+            --bg-card-hover: #3a2a1e;
+            --text-primary: #e8d5b7;
+            --text-secondary: #c4a882;
+            --gold: #d4a853;
+            --gold-light: #e8c97a;
+            --gold-dark: #8b6914;
+            --red-terracotta: #8b4513;
+            --border-color: #3d2b1f;
+            --border-gold: #5a4528;
+            --shadow: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', 'SimSun', serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-gold);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gold-dark);
+        }
+
+        /* 主容器 */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 左侧控制面板 */
+        .left-panel {
+            width: 320px;
+            min-width: 320px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .panel-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gold);
+            text-align: center;
+            letter-spacing: 4px;
+            margin-bottom: 4px;
+        }
+
+        .panel-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .panel-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: var(--gold-light);
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 14px;
+            background: var(--gold);
+            border-radius: 2px;
+        }
+
+        /* 朝代切换按钮 */
+        .dynasty-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dynasty-btn {
+            position: relative;
+            padding: 14px 16px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            color: var(--text-primary);
+        }
+
+        .dynasty-btn:hover {
+            border-color: var(--gold-dark);
+            background: var(--bg-card-hover);
+        }
+
+        .dynasty-btn.active {
+            border-color: var(--gold);
+            background: rgba(212, 168, 83, 0.08);
+        }
+
+        .dynasty-btn .dynasty-name {
+            font-size: 16px;
+            font-weight: 600;
+            display: block;
+        }
+
+        .dynasty-btn .dynasty-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: block;
+        }
+
+        .dynasty-btn.active .dynasty-name {
+            color: var(--gold);
+        }
+
+        /* 类别筛选 */
+        .filter-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-tab {
+            padding: 6px 12px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .filter-tab:hover {
+            border-color: var(--gold-dark);
+            color: var(--text-primary);
+        }
+
+        .filter-tab.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(212, 168, 83, 0.08);
+        }
+
+        /* 梁Tab切换 */
+        .liang-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .liang-tab {
+            flex: 1;
+            padding: 10px 8px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            font-family: inherit;
+            text-align: center;
+        }
+
+        .liang-tab:hover {
+            border-color: var(--gold-dark);
+            color: var(--text-primary);
+        }
+
+        .liang-tab.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(212, 168, 83, 0.08);
+        }
+
+        /* 提示开关 */
+        .hint-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+        }
+
+        .hint-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.on {
+            background: rgba(212, 168, 83, 0.2);
+            border-color: var(--gold);
+        }
+
+        .toggle-switch .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.on .toggle-knob {
+            left: 22px;
+            background: var(--gold);
+        }
+
+        /* 底部提示 */
+        .panel-footer {
+            margin-top: auto;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* 中间展示区域 */
+        .main-display {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: var(--bg-dark);
+        }
+
+        .display-header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .display-title {
+            font-size: 20px;
+            color: var(--gold);
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .display-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* 卡片样式 */
+        .category-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .category-card:hover {
+            border-color: var(--border-gold);
+            box-shadow: 0 4px 12px var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .category-header {
+            padding: 14px 18px;
+            background: rgba(212, 168, 83, 0.04);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--gold-light);
+        }
+
+        .category-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .officials-list {
+            padding: 8px 0;
+        }
+
+        .official-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(61, 43, 31, 0.3);
+            position: relative;
+        }
+
+        .official-item:last-child {
+            border-bottom: none;
+        }
+
+        .official-item:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .official-item.selected {
+            background: rgba(212, 168, 83, 0.08);
+        }
+
+        .official-rank-tag {
+            min-width: 56px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            text-align: center;
+            margin-right: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .rank-high {
+            background: rgba(212, 168, 83, 0.15);
+            color: var(--gold);
+            border: 1px solid rgba(212, 168, 83, 0.3);
+        }
+
+        .rank-mid {
+            background: rgba(201, 160, 78, 0.1);
+            color: #c9a04e;
+            border: 1px solid rgba(201, 160, 78, 0.2);
+        }
+
+        .rank-low {
+            background: rgba(139, 105, 20, 0.1);
+            color: var(--gold-dark);
+            border: 1px solid rgba(139, 105, 20, 0.2);
+        }
+
+        .rank-unknown {
+            background: rgba(196, 168, 130, 0.08);
+            color: var(--text-secondary);
+            border: 1px solid rgba(196, 168, 130, 0.15);
+        }
+
+        .official-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .official-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .official-desc-short {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .hint-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--border-gold);
+            color: var(--bg-dark);
+            font-size: 10px;
+            cursor: help;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .hint-icon:hover {
+            background: var(--gold);
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border-gold);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-primary);
+            max-width: 240px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px var(--shadow);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            line-height: 1.5;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        /* 十八班样式 */
+        .ban-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ban-row {
+            display: flex;
+            align-items: flex-start;
+            padding: 14px 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .ban-row:hover {
+            border-color: var(--border-gold);
+            background: var(--bg-card-hover);
+            transform: translateX(4px);
+        }
+
+        .ban-row.selected {
+            border-color: var(--gold);
+            background: rgba(212, 168, 83, 0.08);
+        }
+
+        .ban-number {
+            min-width: 64px;
+            font-size: 18px;
+            font-weight: 700;
+            padding-right: 16px;
+            border-right: 2px solid;
+            text-align: center;
+            line-height: 1.2;
+            flex-shrink: 0;
+        }
+
+        .ban-top { color: var(--gold); border-color: rgba(212, 168, 83, 0.3); }
+        .ban-high { color: #c9a04e; border-color: rgba(201, 160, 78, 0.25); }
+        .ban-mid { color: #b8956a; border-color: rgba(184, 149, 106, 0.2); }
+        .ban-low { color: var(--gold-dark); border-color: rgba(139, 105, 20, 0.2); }
+
+        .ban-content {
+            flex: 1;
+            margin-left: 16px;
+            min-width: 0;
+        }
+
+        .ban-officials {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+
+        .ban-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        /* 将军号表格 */
+        .general-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .general-table th {
+            background: rgba(212, 168, 83, 0.08);
+            color: var(--gold);
+            padding: 12px 14px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-gold);
+            position: sticky;
+            top: 0;
+        }
+
+        .general-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        .general-table tr {
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+
+        .general-table tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .general-table tr.selected {
+            background: rgba(212, 168, 83, 0.08);
+        }
+
+        .general-table .col-grade {
+            width: 60px;
+        }
+
+        .general-table .col-class {
+            width: 70px;
+            text-align: center;
+        }
+
+        .general-table .col-names {
+            min-width: 200px;
+        }
+
+        .general-table .col-desc {
+            color: var(--text-secondary);
+        }
+
+        /* 右侧详情面板 */
+        .right-panel {
+            width: 350px;
+            min-width: 350px;
+            background: var(--bg-card);
+            border-left: 1px solid var(--border-color);
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .detail-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(212, 168, 83, 0.04);
+        }
+
+        .detail-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 2px;
+        }
+
+        .detail-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .detail-body {
+            padding: 20px;
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section-title {
+            font-size: 13px;
+            color: var(--gold-light);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-section-title::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 12px;
+            background: var(--gold);
+            border-radius: 2px;
+        }
+
+        .detail-text {
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+
+        .detail-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .tag-rank {
+            background: rgba(212, 168, 83, 0.15);
+            color: var(--gold);
+            border: 1px solid rgba(212, 168, 83, 0.3);
+        }
+
+        .tag-local {
+            background: rgba(139, 69, 19, 0.15);
+            color: #c4956a;
+            border: 1px solid rgba(139, 69, 19, 0.3);
+        }
+
+        .tag-source {
+            background: rgba(196, 168, 130, 0.1);
+            color: var(--text-secondary);
+            border: 1px solid rgba(196, 168, 130, 0.2);
+            font-size: 11px;
+        }
+
+        .tag-note {
+            background: rgba(212, 168, 83, 0.08);
+            color: var(--gold-light);
+            border: 1px solid rgba(212, 168, 83, 0.15);
+            font-size: 11px;
+        }
+
+        /* 地方官专属区域 */
+        .local-section {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-dark);
+            border: 1px dashed var(--border-gold);
+            border-radius: 6px;
+        }
+
+        .local-section-title {
+            font-size: 13px;
+            color: var(--gold-light);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .unlock-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: rgba(212, 168, 83, 0.1);
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            color: var(--gold);
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .unlock-btn:hover {
+            background: rgba(212, 168, 83, 0.2);
+        }
+
+        .unlock-content {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            display: none;
+        }
+
+        .unlock-content.open {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .local-detail-item {
+            margin-bottom: 10px;
+        }
+
+        .local-detail-label {
+            font-size: 12px;
+            color: var(--gold-light);
+            margin-bottom: 4px;
+        }
+
+        .local-detail-text {
+            font-size: 12px;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .app-container {
+                flex-direction: column;
+                height: auto;
+                overflow: visible;
+            }
+
+            .left-panel,
+            .right-panel {
+                width: 100%;
+                min-width: auto;
+                border: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .main-display {
+                overflow: visible;
+            }
+
+            .right-panel {
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .panel-header {
+                padding: 16px;
+            }
+
+            .panel-title {
+                font-size: 18px;
+            }
+
+            .main-display {
+                padding: 16px;
+            }
+
+            .ban-row {
+                flex-direction: column;
+            }
+
+            .ban-number {
+                border-right: none;
+                border-bottom: 2px solid;
+                padding-right: 0;
+                padding-bottom: 8px;
+                margin-bottom: 8px;
+                text-align: left;
+            }
+
+            .ban-content {
+                margin-left: 0;
+            }
+
+            .general-table {
+                font-size: 12px;
+            }
+
+            .general-table th,
+            .general-table td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 左侧控制面板 -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <div class="panel-title">南朝官制等级</div>
+                <div class="panel-subtitle">420-557年 · 宋齐梁三代</div>
+            </div>
+
+            <div class="panel-section">
+                <div class="section-title">朝代选择</div>
+                <div class="dynasty-tabs">
+                    <div class="dynasty-btn" data-dynasty="song">
+                        <span class="dynasty-name">宋</span>
+                        <span class="dynasty-desc">420-479年 · 承晋制</span>
+                    </div>
+                    <div class="dynasty-btn" data-dynasty="qi">
+                        <span class="dynasty-name">齐</span>
+                        <span class="dynasty-desc">479-502年 · 沿袭宋制</span>
+                    </div>
+                    <div class="dynasty-btn active" data-dynasty="liang">
+                        <span class="dynasty-name">梁</span>
+                        <span class="dynasty-desc">梁·天监七年徐勉定十八班</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-section" id="filter-section">
+                <div class="section-title">官制类别</div>
+                <div class="filter-tabs" id="filter-tabs">
+                    <div class="filter-tab active" data-filter="all">全部</div>
+                    <div class="filter-tab" data-filter="gongfu">公辅官</div>
+                    <div class="filter-tab" data-filter="lieqing">列卿</div>
+                    <div class="filter-tab" data-filter="shicong">侍从秘书官</div>
+                    <div class="filter-tab" data-filter="difang">地方官</div>
+                </div>
+            </div>
+
+            <div class="panel-section" id="liang-sub-tabs-section" style="display:none;">
+                <div class="section-title">梁官制视图</div>
+                <div class="liang-tabs">
+                    <div class="liang-tab active" data-liang-tab="ban">十八班文职</div>
+                    <div class="liang-tab" data-liang-tab="general">将军号十品二十四班</div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="hint-toggle">
+                    <span class="hint-label">提示开关（显示所有说明）</span>
+                    <div class="toggle-switch" id="hint-toggle">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel-footer">
+                点击官职查看详情<br>
+                地方官标识为需解锁专属内容
+            </div>
+        </div>
+
+        <!-- 中间官制展示区域 -->
+        <div class="main-display">
+            <div class="display-header">
+                <div class="display-title" id="display-title">梁 · 天监十八班制</div>
+                <div class="display-desc" id="display-desc">天监七年（508年），徐勉为吏部尚书，革定官制为十八班。以班多者为贵。</div>
+            </div>
+            <div id="display-content"></div>
+        </div>
+
+        <!-- 右侧详情面板 -->
+        <div class="right-panel">
+            <div class="detail-header">
+                <div class="detail-title" id="detail-title">详情</div>
+                <div class="detail-subtitle" id="detail-subtitle">点击左侧官职查看详情</div>
+            </div>
+            <div class="detail-body" id="detail-body"></div>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // ===== 南朝宋官制数据 =====
+        var SONG_DATA = {
+            dynasty: '宋',
+            period: '420-479年',
+            description: '南朝宋官制承袭晋制，以太宰、太傅、太保、太尉、司徒、司空为三公，相国、丞相亦曾设置。列卿以太常为首，皆中二千石。尚书台为行政中枢，设尚书令、仆射、五尚书。将军号体系庞大，有骠骑、车骑、卫将军及四征、四镇、四安、四平等。',
+            categories: [
+                {
+                    id: 'gongfu',
+                    name: '公辅官',
+                    desc: '名义上的最高官职群体，多为荣誉性头衔',
+                    officials: [
+                        {name:'太宰', rank:'一品', desc:'周武王时周公旦始居之，掌邦治，为六卿之首。晋初依周礼备置三公，景帝名师故置太宰以代之。', note:'权臣篡位前的加衔'},
+                        {name:'太傅', rank:'一品', desc:'周成王时毕公为太傅。辅佐皇帝的高官，多为宗室元老担任。'},
+                        {name:'太保', rank:'一品', desc:'殷太甲时伊尹为太保。周武王时召公为太保。与太傅并列的三公之一。'},
+                        {name:'相国', rank:'一品', desc:'汉高帝十一年始置，萧何居之。自魏晋以来，非复人臣之位矣。', note:'非人臣之位'},
+                        {name:'丞相', rank:'一品', desc:'殷汤以伊尹为右相，仲虺为左相。宋世祖初，以南郡王义宣为丞相，而司徒府如故。'},
+                        {name:'太尉', rank:'一品', desc:'三公之一，自上安下曰尉。掌兵事。'},
+                        {name:'司徒', rank:'一品', desc:'三公之一，掌民事。郊祀掌省牲视濯，大丧安梓宫。'},
+                        {name:'司空', rank:'一品', desc:'三公之一，掌水土事。郊祀掌扫除陈乐器，大丧掌将校复土。'},
+                        {name:'大司马', rank:'一品', desc:'掌武事。魏文帝黄初二年复置，位同三公。'},
+                        {name:'大将军', rank:'一品', desc:'凡将军皆掌征伐。汉东京大将军自为官，位在三司上。'}
+                    ]
+                },
+                {
+                    id: 'lieqing',
+                    name: '列卿',
+                    desc: '中央负责具体事务的官职群体，汉制卿尹秩皆中二千石。沿袭汉代九卿，晋宋有所损益',
+                    officials: [
+                        {name:'太常', rank:'中二千石', desc:'列卿之首，舜摄帝位命伯夷作秩宗掌三礼，即其任也。周时曰宗伯，秦改曰奉常，汉景帝更名太常。掌邦礼、祭祀、教育。下属博士、太祝令、太史令、太乐令等。', note:'位列九卿之首'},
+                        {name:'光禄勋', rank:'中二千石', desc:'秦曰郎中令，汉武更名光禄勋。掌三署郎及宫殿宿卫。'},
+                        {name:'卫尉', rank:'中二千石', desc:'掌宫门屯兵。晋时曾掌冶铸，领冶令三十九。宋世祖孝建元年复置。'},
+                        {name:'太仆', rank:'中二千石', desc:'掌舆马。周穆王所置，秦因之。宋以来不置，郊祀则权置执辔，事毕即省。'},
+                        {name:'廷尉', rank:'中二千石', desc:'掌刑辟。凡狱必质之朝廷，与众共之之义。魏置律博士一人。'},
+                        {name:'大司农', rank:'中二千石', desc:'掌九谷六畜之供膳羞者。秦治粟内史，汉景帝更名大农令，武帝更名大司农。'},
+                        {name:'少府', rank:'中二千石', desc:'掌市服御之物，掌禁钱以给私养。下属左尚方、右尚方、东冶、南冶、平准令等。'},
+                        {name:'大鸿胪', rank:'中二千石', desc:'掌赞导拜授诸王。秦世为典客，汉景帝更名大行令，武帝更名大鸿胪。'},
+                        {name:'将作大匠', rank:'中二千石', desc:'掌土木之役。秦置将作少府，汉景帝更名将作大匠。晋以来有事则置，无则省。'},
+                        {name:'都水使者', rank:'六百石', desc:'一人，掌舟航及运部。秦汉有都水长丞，晋武帝省水衡置都水使者。有参军、谒者、令史。'}
+                    ]
+                },
+                {
+                    id: 'shangshu',
+                    name: '尚书台',
+                    desc: '尚书台为行政中枢，设尚书令、仆射、各曹尚书，号称"八坐"',
+                    officials: [
+                        {name:'尚书令', rank:'千石', desc:'任总机衡，仆射、尚书分领诸曹。江左以来唯旦朝。'},
+                        {name:'左仆射', rank:'六百石', desc:'领殿中、主客二曹。无尚书令时，左仆射为台主。'},
+                        {name:'右仆射', rank:'六百石', desc:'与左仆射分道，无尚书令时共为台主。'},
+                        {name:'吏部尚书', rank:'六百石', desc:'领吏部、删定、三公、比部四曹。掌官员选拔。'},
+                        {name:'度支尚书', rank:'六百石', desc:'领度支、金部、仓部、起部四曹。掌财政收支。'},
+                        {name:'左民尚书', rank:'六百石', desc:'领左民、驾部二曹。'},
+                        {name:'都官尚书', rank:'六百石', desc:'领都官、水部、库部、功部四曹。'},
+                        {name:'五兵尚书', rank:'六百石', desc:'领中兵、外兵二曹。掌军事。'},
+                        {name:'祠部尚书', rank:'六百石', desc:'领祠部、仪曹二曹。掌祭祀礼仪。'},
+                        {name:'起部尚书', rank:'-', desc:'营宗庙宫室则权置，事毕省。'}
+                    ]
+                },
+                {
+                    id: 'shicong',
+                    name: '侍从秘书官',
+                    desc: '围绕皇帝办公的近臣群体，侍中、散骑常侍、给事黄门侍郎合称"门下三官"',
+                    officials: [
+                        {name:'侍中', rank:'三品', desc:'四人，掌奏事，直侍左右，应对献替。法驾出则正直一人负玺陪乘。秩比二千石。'},
+                        {name:'散骑常侍', rank:'三品', desc:'四人，掌侍左右。魏初与中常侍合置，久次者为祭酒散骑常侍。秩比二千石。'},
+                        {name:'给事黄门侍郎', rank:'三品', desc:'四人，与侍中俱掌众事，郊庙临轩则一人执麾。诸王朝见则引王朝坐。魏晋以来员四人，六百石。'},
+                        {name:'给事中', rank:'-', desc:'无员，掌顾问应对，位次中常侍。汉东京省，魏世复置。'},
+                        {name:'中书令', rank:'三品', desc:'一人，魏黄初初改为中书令。宋初又置通事舍人，而侍郎之任轻矣。'},
+                        {name:'中书侍郎', rank:'-', desc:'四人，晋改曰中书侍郎。舍人直阁内隶中书，其任渐轻。'},
+                        {name:'中书通事舍人', rank:'-', desc:'四人，掌呈奏案章。江左合舍人通事谓之通事舍人。'},
+                        {name:'秘书监', rank:'三品', desc:'一人，掌艺文图籍。魏武帝置秘书令，文帝改令为监。'},
+                        {name:'秘书丞', rank:'-', desc:'一人。'},
+                        {name:'秘书郎', rank:'-', desc:'四人。'},
+                        {name:'著作郎', rank:'-', desc:'一人，谓之大著作，专掌史任。晋制佐郎始到职必撰名臣传一人。'}
+                    ]
+                },
+                {
+                    id: 'jiangjun',
+                    name: '将军号',
+                    desc: '将军号体系庞大，分重号将军与杂号将军，多为加官或军职',
+                    officials: [
+                        {name:'骠骑将军', rank:'从公', desc:'一人。汉武帝元狩二年始用霍去病。位从公。', note:'品阶表列右第二品'},
+                        {name:'车骑将军', rank:'从公', desc:'一人。汉文帝元年始用薄昭。位从公。'},
+                        {name:'卫将军', rank:'从公', desc:'一人。汉文帝元年始用宋昌。三号位亚三司。'},
+                        {name:'中军将军', rank:'从公', desc:'一人。汉武帝以公孙敖为之，时为杂号。'},
+                        {name:'镇军将军', rank:'从公', desc:'一人。魏以陈群为之。'},
+                        {name:'抚军将军', rank:'从公', desc:'一人。魏以司马宣王为之。'},
+                        {name:'征东将军', rank:'三品', desc:'一人。汉献帝初平三年马腾居之。'},
+                        {name:'征南将军', rank:'三品', desc:'一人。汉光武建武中岑彭居之。'},
+                        {name:'征西将军', rank:'三品', desc:'一人。汉光武建武中冯异居之。'},
+                        {name:'征北将军', rank:'三品', desc:'一人。'},
+                        {name:'镇东将军', rank:'四品', desc:'一人。后汉末魏武帝居之。'},
+                        {name:'镇南将军', rank:'四品', desc:'一人。后汉末刘表居之。'},
+                        {name:'镇西将军', rank:'四品', desc:'一人。后汉初平三年韩遂居之。'},
+                        {name:'镇北将军', rank:'四品', desc:'一人。'},
+                        {name:'安东将军', rank:'四品', desc:'一人。'},
+                        {name:'安南将军', rank:'四品', desc:'一人。'},
+                        {name:'安西将军', rank:'四品', desc:'一人。'},
+                        {name:'安北将军', rank:'四品', desc:'一人。'},
+                        {name:'平东将军', rank:'四品', desc:'一人。'},
+                        {name:'平南将军', rank:'四品', desc:'一人。'},
+                        {name:'平西将军', rank:'四品', desc:'一人。'},
+                        {name:'平北将军', rank:'四品', desc:'一人。'},
+                        {name:'左/右/前/后将军', rank:'三品', desc:'周末官，秦汉因之。光武建武七年省，魏以来复置。'},
+                        {name:'冠军将军', rank:'四品', desc:'楚怀王以宋义为卿子冠军。魏正始中以文钦为之。'},
+                        {name:'龙骧将军', rank:'四品', desc:'晋武帝始以王濬居之。'},
+                        {name:'征虏将军', rank:'四品', desc:'汉光武建武中以祭遵居之。'},
+                        {name:'辅国将军', rank:'四品', desc:'汉献帝以伏完居之。'},
+                        {name:'杂号将军', rank:'五品', desc:'鹰扬、折冲、轻车、宁远、材官、伏波、凌江、建威、振威等四十余号。'}
+                    ]
+                },
+                {
+                    id: 'yushi',
+                    name: '御史台',
+                    desc: '御史台掌奏劾不法，设中丞、治书侍御史、侍御史',
+                    officials: [
+                        {name:'御史中丞', rank:'四品', desc:'一人，为御史台主。外督部刺史，内领侍御史。每月二十五日绕行宫垣白壁。秩千石。'},
+                        {name:'治书侍御史', rank:'六品', desc:'掌举劾官品第六以上。魏晋以来分掌侍御史所掌诸曹，若尚书二丞。'},
+                        {name:'侍御史', rank:'六品', desc:'掌察举非法，受公卿奏事。宋有十御史，分掌吏曹、法曹、库曹等。'}
+                    ]
+                },
+                {
+                    id: 'jinwei',
+                    name: '禁卫武官',
+                    desc: '掌宫门宿卫及京师禁军，领军将军掌内军，护军将军掌外军',
+                    officials: [
+                        {name:'领军将军', rank:'三品', desc:'一人，掌内军。魏始置领军主五校中垒武卫三营。资重者为领军将军，轻者曰中领军。'},
+                        {name:'护军将军', rank:'三品', desc:'一人，掌外军。资重者为护军将军，轻者曰中护军。'},
+                        {name:'左卫将军', rank:'四品', desc:'一人，掌宿卫营兵。晋文帝置中卫将军，武帝分置左右卫。'},
+                        {name:'右卫将军', rank:'四品', desc:'一人，掌宿卫营兵。与左卫并称二卫。'},
+                        {name:'骁骑将军', rank:'-', desc:'魏世置为内军，有营兵。'},
+                        {name:'游击将军', rank:'-', desc:'汉武时韩说为游击，与骁骑及四军号合为六军。'},
+                        {name:'虎贲中郎将', rank:'-', desc:'比二千石。周官有虎贲氏，汉武帝建元三年始置期门，平帝更名虎贲。'},
+                        {name:'羽林监', rank:'-', desc:'六百石。汉武帝太初元年置羽林骑。晋罢羽林中郎将，置一监。'},
+                        {name:'五校尉', rank:'二千石', desc:'屯骑、步兵、越骑、长水、射声五校并汉武帝置。汉东京五校典宿卫士。'}
+                    ]
+                },
+                {
+                    id: 'donggong',
+                    name: '东宫官属',
+                    desc: '太子太傅、少傅辅导太子，詹事总东宫事，率更、家令、仆为三卿',
+                    officials: [
+                        {name:'太子太傅', rank:'三品', desc:'一人，中二千石。傅辅导太子，并以功曹、主簿、五官为官属。'},
+                        {name:'太子少傅', rank:'三品', desc:'一人，二千石。与太傅并为二傅。'},
+                        {name:'太子詹事', rank:'三品', desc:'一人，千石。职比台尚书令、领军将军，总东宫事。'},
+                        {name:'家令', rank:'-', desc:'千石。主刑狱饮食，职比廷尉、司农、少府。'},
+                        {name:'率更令', rank:'-', desc:'千石。主宫殿门户及赏罚事，职如光禄勋、卫尉。'},
+                        {name:'太子仆', rank:'-', desc:'千石。主车马亲族，职如太仆、宗正。'},
+                        {name:'中庶子', rank:'五品', desc:'四人，职如侍中。秩六百石。'},
+                        {name:'庶子', rank:'五品', desc:'四人，职比散骑常侍、中书监令。秩四百石。'},
+                        {name:'太子洗马', rank:'七品', desc:'八人，职如谒者、秘书郎。太子出则当直者前驱导威仪。'},
+                        {name:'太子左卫率', rank:'五品', desc:'一人，职如左卫将军，领一军。'},
+                        {name:'太子右卫率', rank:'五品', desc:'一人，职如右卫将军，领一军。'}
+                    ]
+                },
+                {
+                    id: 'difang',
+                    name: '地方官',
+                    desc: '州郡县三级管理体系，刺史六百石，太守二千石，县令千石至六百石',
+                    officials: [
+                        {name:'州刺史', rank:'六百石', desc:'每州各一人，掌诏书所察六条。领兵者与四征同，不领兵者与前后左右杂号将军同。', isLocal:true, localLevel:'州'},
+                        {name:'别驾从事史', rank:'-', desc:'一人，从刺史行部。别驾西曹主吏及选举事。', isLocal:true, localLevel:'州'},
+                        {name:'治中从事史', rank:'-', desc:'一人，治中主众曹文书事。即汉之功曹书佐。', isLocal:true, localLevel:'州'},
+                        {name:'祭酒从事史', rank:'-', desc:'分掌诸曹兵、贼、仓、户、水、铠之属。扬州无祭酒，而主簿治事。', isLocal:true, localLevel:'州'},
+                        {name:'郡太守', rank:'二千石', desc:'秦官，守治民，丞佐之。郡当边戍者，丞为长史。汉景帝更名守曰太守。', isLocal:true, localLevel:'郡'},
+                        {name:'郡丞', rank:'六百石', desc:'佐太守。晋江左皆谓之丞。成帝咸康七年省，宋元嘉四年复置。', isLocal:true, localLevel:'郡'},
+                        {name:'内史', rank:'二千石', desc:'诸王封地郡长官，改太守为内史。职责与太守相同。', isLocal:true, localLevel:'郡'},
+                        {name:'县令', rank:'千石至六百石', desc:'秦官，大者为令，侯国为相。汉制置丞一人，尉大县二人小县一人。', isLocal:true, localLevel:'县'},
+                        {name:'县长', rank:'五百石', desc:'秦官，小者为长。'}
+                    ]
+                }
+            ]
+        };
+
+        // ===== 南齐官制数据 =====
+        var QI_DATA = {
+            dynasty: '齐',
+            period: '479-502年',
+            description: '南齐官制基本沿袭宋制，但尚书台体系更为完善，侍从官权力进一步扩大。',
+            categories: [
+                {
+                    id: 'gongfu',
+                    name: '公辅官',
+                    desc: '沿袭宋制，但太宰、大司马、大将军等职位后多以为赠',
+                    officials: [
+                        {name:'太傅', rank:'一品', desc:'齐唯置太傅，太师、太保多为赠官。'},
+                        {name:'太尉', rank:'一品', desc:'三公之一。'},
+                        {name:'司徒', rank:'一品', desc:'三公之一。'},
+                        {name:'司空', rank:'一品', desc:'三公之一。'},
+                        {name:'大司马', rank:'一品', desc:'后无人担任，齐以为赠。'},
+                        {name:'大将军', rank:'一品', desc:'后无人担任，齐以为赠。'},
+                        {name:'特进', rank:'从公', desc:'位从公，为荣誉性加衔。'}
+                    ]
+                },
+                {
+                    id: 'jiangjun',
+                    name: '将军号',
+                    desc: '南齐将军号体系庞大，分重号将军与杂号将军',
+                    officials: [
+                        {name:'骠骑将军', rank:'从公', desc:'位从公，开府仪同三司。'},
+                        {name:'车骑将军', rank:'从公', desc:'位从公，开府仪同三司。'},
+                        {name:'卫将军', rank:'从公', desc:'位从公。'},
+                        {name:'镇军将军', rank:'从公', desc:'位从公。'},
+                        {name:'中军将军', rank:'从公', desc:'位从公。'},
+                        {name:'抚军将军', rank:'从公', desc:'位从公。'},
+                        {name:'四征将军', rank:'-', desc:'征东、征西、征南、征北。'},
+                        {name:'四镇将军', rank:'-', desc:'镇东、镇西、镇南、镇北。'},
+                        {name:'四安将军', rank:'-', desc:'安东、安西、安南、安北。'},
+                        {name:'四平将军', rank:'-', desc:'平东、平西、平南、平北。'}
+                    ]
+                },
+                {
+                    id: 'shangshu',
+                    name: '尚书台',
+                    desc: '尚书台是南齐行政中枢，设尚书令、仆射、五尚书',
+                    officials: [
+                        {name:'尚书令', rank:'-', desc:'总领尚书台二十曹，为内台主。'},
+                        {name:'左仆射', rank:'-', desc:'领殿中、主客二曹事。无尚书令时，左仆射为台主。'},
+                        {name:'右仆射', rank:'-', desc:'与左仆射分道。'},
+                        {name:'吏部尚书', rank:'-', desc:'领吏部、删定、三公、比部四曹。掌官员选拔。'},
+                        {name:'度支尚书', rank:'-', desc:'领度支、金部、仓部、起部四曹。掌财政。'},
+                        {name:'左民尚书', rank:'-', desc:'领左民、驾部二曹。'},
+                        {name:'都官尚书', rank:'-', desc:'领都官、水部、库部、功论四曹。'},
+                        {name:'五兵尚书', rank:'-', desc:'领中兵、外兵二曹。掌军事。'},
+                        {name:'祠部尚书', rank:'-', desc:'掌祭祀礼仪。'},
+                        {name:'起部尚书', rank:'-', desc:'兴立宫庙权置，事毕省。'}
+                    ]
+                },
+                {
+                    id: 'shicong',
+                    name: '侍从官',
+                    desc: '侍从官权力在南齐进一步扩大',
+                    officials: [
+                        {name:'侍中', rank:'-', desc:'门下主官，呼为"门下"。与帝接膝共语，权力极大。'},
+                        {name:'给事黄门侍郎', rank:'-', desc:'管知诏令，世呼为"小门下"。'},
+                        {name:'散骑常侍', rank:'-', desc:'与侍中通官。'},
+                        {name:'中书监/令', rank:'-', desc:'掌诏令起草。'},
+                        {name:'秘书监', rank:'-', desc:'掌图书典籍。'},
+                        {name:'御史中丞', rank:'-', desc:'专道而行，职无不察。与尚书令分道，虽丞郎下朝相值亦得断之。'}
+                    ]
+                },
+                {
+                    id: 'difang',
+                    name: '地方官',
+                    desc: '州郡县三级制，与宋基本相同',
+                    officials: [
+                        {name:'州刺史', rank:'-', desc:'州最高长官，重者加都督，轻者单为刺史。', isLocal:true, localLevel:'州'},
+                        {name:'别驾从事史', rank:'-', desc:'州刺史佐官。', isLocal:true, localLevel:'州'},
+                        {name:'治中从事史', rank:'-', desc:'州刺史佐官。', isLocal:true, localLevel:'州'},
+                        {name:'郡太守/内史', rank:'-', desc:'郡最高长官。诸王封地为内史。', isLocal:true, localLevel:'郡'},
+                        {name:'县令/相', rank:'-', desc:'县最高长官。郡县为国者为内史相。', isLocal:true, localLevel:'县'},
+                        {name:'护南蛮校尉', rank:'-', desc:'隶荆州，掌南方少数民族事务。', isLocal:true, localLevel:'边疆'},
+                        {name:'平越中郎将', rank:'-', desc:'隶广州，掌岭南事务。', isLocal:true, localLevel:'边疆'}
+                    ]
+                }
+            ]
+        };
+
+        // ===== 梁天监官制数据（十八班制，重点） =====
+        var LIANG_DATA = {
+            dynasty: '梁',
+            period: '502-557年',
+            description: '天监七年（508年），徐勉为吏部尚书，革定官制为十八班。以班多者为贵，同班者以居下者为劣。这是南朝最为系统化的官制等级体系。',
+            reformYear: '天监七年（508年）',
+            reformer: '徐勉',
+            banSystem: [
+                {ban:18, officials:'丞相、太宰、太傅、太保、大司马、大将军、太尉、司徒、司空', desc:'最高等级，三公三师等大贵'},
+                {ban:17, officials:'诸将军开府仪同三司、左右光禄开府仪同三司', desc:'位从公，开府置佐'},
+                {ban:16, officials:'尚书令、太子太傅、左右光禄大夫', desc:'尚书台主官与太子师保'},
+                {ban:15, officials:'尚书左仆射、太子少傅、尚书仆射、右仆射、中书监、特进、领护军将军', desc:'尚书台副官与中书省主官'},
+                {ban:14, officials:'中领护军、吏部尚书、太子詹事、金紫光禄大夫、太常卿', desc:'尚书曹官与太子府官'},
+                {ban:13, officials:'中书令、列曹尚书、国子祭酒、宗正太府卿、光禄大夫', desc:'中书省与列卿'},
+                {ban:12, officials:'侍中、散骑常侍、左右卫将军、司徒左长史、卫尉卿', desc:'门下省与禁卫将军'},
+                {ban:11, officials:'御史中丞、尚书吏部郎、秘书监、通直散骑常侍、太子左右二卫率、左右骁骑、左右游击、太中大夫、皇弟皇子师、司农少府廷尉卿、太子中庶子、光禄卿', desc:'御史台、秘书省、太子府官'},
+                {ban:10, officials:'给事黄门侍郎、员外散骑常侍、皇弟皇子府长史、太仆大匠卿、太子家令率更令仆、扬州别驾、中散大夫、司徒右长史、云骑游骑、皇弟皇子府司马、朱衣直阁将军', desc:'黄门省与王府官'},
+                {ban:9, officials:'尚书左丞、鸿胪卿、中书侍郎、国子博士、太子庶子、扬州中从事、皇弟皇子公府从事中郎、太舟卿、大长秋、皇弟皇子府咨议、嗣王府长史、前左右后四军嗣王府司马、庶姓公府长史司马', desc:'尚书丞、中书侍郎、国子学官'},
+                {ban:8, officials:'秘书丞、太子中舍人、司徒左西掾、司徒属、皇弟皇子友、散骑侍郎、尚书右丞、南徐州别驾、皇弟皇子公府掾属、左右中郎将、嗣王庶姓公府咨议、皇弟皇子之庶子府长史司马、蕃王府长史司马、庶姓持节府长史司马', desc:'秘书省、王府属官'},
+                {ban:7, officials:'五校、东宫三校、皇弟皇子之庶子府中录事中记室中直兵参军、南徐州中从事、皇弟皇子之庶子府蕃王府咨议', desc:'校尉与王府参军'},
+                {ban:6, officials:'太子洗马、通直散骑侍郎、司徒主簿、尚书侍郎、著作郎、皇弟皇子府功曹史、五经博士、皇弟皇子府录事记室中兵参军、皇弟皇子荆江雍郢南兖五州别驾、领护军长史司马、嗣王庶姓公府掾属、南台治书侍御史、廷尉三官、谒者仆射、太子门大夫、嗣王庶姓公府中录事中记室中直兵参军、庶姓府咨议', desc:'太子府、尚书省、御史台低级官'},
+                {ban:5, officials:'尚书郎中、皇弟皇子文学及府主簿、太子太傅少傅丞、皇弟皇子湘豫司益广青衡七州别驾、皇弟皇子荆江雍郢南兖五州中从事、嗣王庶姓荆江雍郢南兖五州别驾、太常丞、皇弟皇子国郎中令、三将、东宫二将、嗣王府功曹史、庶姓公府录事记室中兵参军、皇弟皇子之庶子府蕃王府中录事中记室中直兵参军', desc:'尚书郎中、太子府丞'},
+                {ban:4, officials:'给事中、皇弟皇子府正参军、中书舍人、建康三官、皇弟皇子北徐北兖梁交南梁五州别驾、皇弟皇子湘豫司益广青衡七州别驾中从事、嗣王庶姓湘豫司益广青衡七州别驾、嗣王庶姓荆江雍郢南兖五州中从事、宗正太府卫尉司农少府廷尉太子詹事等丞、积射强弩将军、太子左右积弩将军、皇弟皇子国大农、嗣王国郎中令、嗣王庶姓公府主簿、皇弟皇子之庶子府蕃王府录事记室中兵参军', desc:'给事中、中书舍人、列卿丞'},
+                {ban:3, officials:'太子舍人、司徒祭酒、皇弟皇子公府祭酒、员外散骑侍郎、皇弟皇子府行参军、太子太傅少傅五官功曹主簿、二卫司马、公车令、胄子律博士、皇弟皇子越桂宁霍四州别驾、皇弟皇子北徐北兖梁交南梁五州中从事、嗣王庶姓北徐北兖梁交南梁五州别驾、湘豫司益广青衡七州中从事、嗣王庶姓公府正参军、皇弟皇子之庶子府蕃王府功曹史、武卫将军、光禄丞、皇弟皇子国中尉、太仆大匠丞、嗣王国大农、蕃王国郎中令、庶姓持节府中录事中记室中直兵参军、北馆令', desc:'太子舍人、散骑侍郎、武卫将军'},
+                {ban:2, officials:'秘书郎、著作佐郎、杨南徐州主簿、嗣王庶姓公府祭酒、皇弟皇子单为领护詹事二卫等五官功曹主簿、太学博士、皇弟皇子国常侍、奉朝请、国子助教、皇弟皇子越桂宁霍四州中从事、皇弟皇子荆江雍郢南兖五州主簿、嗣王庶姓越桂宁霍四州别驾、嗣王庶姓北徐北兖梁交南梁五州中从事、鸿胪丞、尚书五都令史、武骑常侍、材官将军、明堂二庙帝陵令、嗣王府庶姓公府行参军、皇弟皇子之庶子府正参军、蕃王国大农、庶姓持节府录事记室中兵参军、庶姓持节府功曹史', desc:'秘书郎、著作佐郎、太学博士'},
+                {ban:1, officials:'扬南徐州西曹祭酒从事、皇弟皇子国侍郎、嗣王国常侍、扬南徐州议曹从事、东宫通事舍人、南台侍御史、太舟丞、二卫殿中将军、太子二率殿中将军、皇弟皇子之庶子府蕃王府行参军、蕃王国中尉、皇弟皇子湘豫司益广青衡七州主簿、皇弟皇子荆雍郢南兖四州西曹祭酒议曹从事、皇弟皇子江州西曹从事祭酒议曹祭酒部传从事、嗣王庶姓越桂宁霍四州中从事、嗣王庶姓荆江雍郢南兖五州主簿、庶姓持节府主簿、汝阴巴陵二国郎中令、太官太乐太市太史太医太祝东西冶左右尚方南北武库车府等令', desc:'最低班品，各类令史、殿中将军'}
+            ],
+            generalRanks: [
+                {grade:'一品', class:24, names:'镇、卫、骠骑、车骑', desc:'重号将军，内外通用'},
+                {grade:'一品', class:23, names:'四征（东南西北）、四中（军卫抚护）', desc:'四征止施外，四中止施内'},
+                {grade:'一品', class:22, names:'八镇', desc:'东南西北止施外，左右前后止施内'},
+                {grade:'一品', class:21, names:'八安', desc:'同八镇'},
+                {grade:'一品', class:20, names:'四平、四翊', desc:'三十五号为一品'},
+                {grade:'二品', class:19, names:'忠武、军师', desc:''},
+                {grade:'二品', class:18, names:'武臣、爪牙、龙骑、云麾', desc:'代旧前后左右四将军'},
+                {grade:'二品', class:17, names:'镇兵、翊师、宣惠、宣毅', desc:'代旧四中郎'},
+                {grade:'三品', class:16, names:'智威、仁威、勇威、信威、严威', desc:'五德将军之威'},
+                {grade:'三品', class:15, names:'智武、仁武、勇武、信武、严武', desc:'五德将军之武'},
+                {grade:'四品', class:14, names:'轻车、征远、镇朔、武旅、贞毅', desc:'代旧辅国'},
+                {grade:'四品', class:13, names:'宁远、明威、振远、电耀、威耀', desc:'代旧宁朔'},
+                {grade:'五品', class:12, names:'武威、武骑、武猛、壮武、飙武', desc:''},
+                {grade:'五品', class:11, names:'电威、驰锐、追锋、羽骑、突骑', desc:''},
+                {grade:'六品', class:10, names:'折冲、冠武、和戎、安垒、猛烈', desc:''},
+                {grade:'六品', class:9, names:'扫狄、雄信、扫虏、武锐、摧锋', desc:''},
+                {grade:'七品', class:8, names:'略远、贞威、决胜、开远、光野', desc:''},
+                {grade:'七品', class:7, names:'厉锋、轻锐、讨狄、荡虏、荡夷', desc:''},
+                {grade:'八品', class:6, names:'超武、铁骑、楼船、宣猛、树功', desc:''},
+                {grade:'八品', class:5, names:'克狄、平虏、讨夷、平狄、威戎', desc:''},
+                {grade:'九品', class:4, names:'伏波、雄戟、长剑、冲冠、雕骑', desc:''},
+                {grade:'九品', class:3, names:'佽飞、安夷、克戎、绥狄、威虏', desc:''},
+                {grade:'十品', class:2, names:'前锋、武毅、开边、招远、金威', desc:''},
+                {grade:'十品', class:1, names:'绥虏、荡寇、殄虏、横野、驰射', desc:''}
+            ],
+            localOfficials: [
+                {name:'郡守', ban:10, desc:'郡最高长官，为十班。', isLocal:true, localLevel:'郡'},
+                {name:'郡丞', ban:10, desc:'郡守佐官，同为十班。', isLocal:true, localLevel:'郡'},
+                {name:'县令', ban:7, desc:'县最高长官，为七班。', isLocal:true, localLevel:'县'}
+            ],
+            lowRanks: [
+                {name:'位不登二品者', desc:'另有七班至一班，为低级官职，主要各类令史、殿中将军等。'}
+            ]
+        };
+
+        // ===== 地方官专属数据 =====
+        var LOCAL_DETAILS = {
+            '州': {
+                jurisdiction: '一州之地，辖数郡至十余郡不等',
+                duties: '掌军政大权，普遍加授将军号。重要州刺史兼任都督数州军事，统管数州军政。',
+                powers: '行政任免、军事指挥、赋税征调、司法监察',
+                examples: '荆州刺史（镇江陵）、扬州刺史（镇建康）、雍州刺史（镇襄阳）'
+            },
+            '郡': {
+                jurisdiction: '一郡之地，辖数县至十余县',
+                duties: '郡最高长官，掌一郡行政、司法、军事。重要郡太守加授将军号。',
+                powers: '赋税征收、司法审判、地方治安、徭役征发',
+                examples: '吴郡太守、会稽内史、丹阳尹（京畿重地）'
+            },
+            '县': {
+                jurisdiction: '一县之地',
+                duties: '县最高长官。万户以上为县令，以下为县长。掌一县户籍、治安、赋役。',
+                powers: '户籍管理、治安维持、赋役征调、教化推行',
+                examples: '建康令、吴令、山阴令'
+            },
+            '边疆': {
+                jurisdiction: '特定边疆区域',
+                duties: '掌边疆少数民族事务，维护边疆安定。',
+                powers: '军事镇抚、民族事务、贸易管理',
+                examples: '护南蛮校尉（隶荆州）、平越中郎将（隶广州）'
+            }
+        };
+
+        // ===== 状态管理 =====
+        var state = {
+            dynasty: 'liang',
+            filter: 'all',
+            liangTab: 'ban',
+            selectedItem: null,
+            hintEnabled: false
+        };
+
+        var DYNASTY_MAP = {
+            song: SONG_DATA,
+            qi: QI_DATA,
+            liang: LIANG_DATA
+        };
+
+        // ===== 辅助函数 =====
+        function getRankClass(rank) {
+            if (!rank || rank === '-') return 'rank-unknown';
+            if (rank === '一品' || rank === '从公' || rank === '二千石') return 'rank-high';
+            if (rank === '二品' || rank === '三品') return 'rank-mid';
+            return 'rank-low';
+        }
+
+        function getBanClass(ban) {
+            if (ban >= 16) return 'ban-top';
+            if (ban >= 10) return 'ban-high';
+            if (ban >= 5) return 'ban-mid';
+            return 'ban-low';
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function truncate(str, len) {
+            if (!str) return '';
+            return str.length > len ? str.substring(0, len) + '...' : str;
+        }
+
+        // ===== 渲染主区域 =====
+        function renderDisplay() {
+            var data = DYNASTY_MAP[state.dynasty];
+            var container = document.getElementById('display-content');
+            var titleEl = document.getElementById('display-title');
+            var descEl = document.getElementById('display-desc');
+
+            titleEl.textContent = data.dynasty + ' · ' + (data.reformYear ? data.reformYear + ' ' : '') + data.period;
+            descEl.textContent = data.description;
+
+            if (state.dynasty === 'liang') {
+                document.getElementById('filter-section').style.display = 'none';
+                document.getElementById('liang-sub-tabs-section').style.display = 'block';
+                if (state.liangTab === 'ban') {
+                    renderLiangBan(container, data);
+                } else {
+                    renderLiangGeneral(container, data);
+                }
+            } else {
+                document.getElementById('filter-section').style.display = 'block';
+                document.getElementById('liang-sub-tabs-section').style.display = 'none';
+                renderSongQi(container, data);
+            }
+        }
+
+        function renderSongQi(container, data) {
+            var html = '';
+            data.categories.forEach(function(cat) {
+                if (state.filter !== 'all' && cat.id !== state.filter) return;
+
+                html += '<div class="category-card" data-category="' + cat.id + '">';
+                html += '<div class="category-header">';
+                html += '<div><div class="category-name">' + escapeHtml(cat.name) + '</div>';
+                html += '<div class="category-desc">' + escapeHtml(cat.desc) + '</div></div>';
+                html += '</div>';
+                html += '<div class="officials-list">';
+
+                cat.officials.forEach(function(off, idx) {
+                    var key = cat.id + '-' + idx;
+                    var rankClass = getRankClass(off.rank);
+                    var shortDesc = truncate(off.desc, 30);
+                    var isSelected = state.selectedItem && state.selectedItem.key === key ? 'selected' : '';
+
+                    html += '<div class="official-item ' + isSelected + '" data-key="' + key + '" data-cat="' + cat.id + '" data-idx="' + idx + '">';
+                    html += '<div class="official-rank-tag ' + rankClass + '">' + escapeHtml(off.rank) + '</div>';
+                    html += '<div class="official-info">';
+                    html += '<div class="official-name">' + escapeHtml(off.name);
+                    if (state.hintEnabled) {
+                        html += '<span class="hint-icon" data-tip="' + escapeHtml(truncate(off.desc, 40)) + '">?</span>';
+                    }
+                    html += '</div>';
+                    html += '<div class="official-desc-short">' + escapeHtml(shortDesc) + '</div>';
+                    html += '</div></div>';
+                });
+
+                html += '</div></div>';
+            });
+
+            container.innerHTML = html || '<div class="empty-state"><div class="empty-state-icon">无</div>该类别下无官职数据</div>';
+            bindOfficialClicks();
+            bindTooltipEvents();
+        }
+
+        function renderLiangBan(container, data) {
+            var html = '<div class="ban-list">';
+            data.banSystem.forEach(function(row) {
+                var banClass = getBanClass(row.ban);
+                var isSelected = state.selectedItem && state.selectedItem.ban === row.ban ? 'selected' : '';
+                html += '<div class="ban-row ' + isSelected + '" data-ban="' + row.ban + '">';
+                html += '<div class="ban-number ' + banClass + '">' + row.ban + '班</div>';
+                html += '<div class="ban-content">';
+                html += '<div class="ban-officials">' + escapeHtml(row.officials);
+                if (state.hintEnabled) {
+                    html += ' <span class="hint-icon" data-tip="' + escapeHtml(truncate(row.desc, 40)) + '">?</span>';
+                }
+                html += '</div>';
+                html += '<div class="ban-desc">' + escapeHtml(row.desc) + '</div>';
+                html += '</div></div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
+            bindBanClicks();
+            bindTooltipEvents();
+        }
+
+        function renderLiangGeneral(container, data) {
+            var html = '<table class="general-table"><thead><tr>';
+            html += '<th class="col-grade">品级</th>';
+            html += '<th class="col-class">班数</th>';
+            html += '<th class="col-names">将军名号</th>';
+            html += '<th class="col-desc">说明</th>';
+            html += '</tr></thead><tbody>';
+
+            data.generalRanks.forEach(function(row) {
+                var isSelected = state.selectedItem && state.selectedItem.classNum === row.class ? 'selected' : '';
+                html += '<tr class="' + isSelected + '" data-class="' + row.class + '">';
+                html += '<td>' + escapeHtml(row.grade) + '</td>';
+                html += '<td style="text-align:center;font-weight:600;color:var(--gold);">' + row.class + '班</td>';
+                html += '<td>' + escapeHtml(row.names);
+                if (state.hintEnabled) {
+                    html += ' <span class="hint-icon" data-tip="' + escapeHtml(truncate(row.desc || row.names, 40)) + '">?</span>';
+                }
+                html += '</td>';
+                html += '<td class="col-desc">' + escapeHtml(row.desc || '-') + '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            bindGeneralClicks();
+            bindTooltipEvents();
+        }
+
+        // ===== 详情面板 =====
+        function renderDetail(item, type) {
+            var body = document.getElementById('detail-body');
+            var title = document.getElementById('detail-title');
+            var subtitle = document.getElementById('detail-subtitle');
+
+            if (!item) {
+                title.textContent = '详情';
+                subtitle.textContent = '点击左侧官职查看详情';
+                body.innerHTML = '<div class="empty-state"><div class="empty-state-icon" style="font-size:48px;">&#128214;</div><div>请从左侧选择一个官职或班品<br>查看详细信息</div></div>';
+                return;
+            }
+
+            var html = '';
+
+            if (type === 'official') {
+                title.textContent = item.name;
+                subtitle.textContent = '南朝' + (state.dynasty === 'song' ? '宋' : state.dynasty === 'qi' ? '齐' : '梁') + '官职';
+
+                html += '<div class="detail-tag tag-rank">' + (item.rank && item.rank !== '-' ? item.rank : '品级未详') + '</div>';
+                if (item.isLocal) {
+                    html += '<div class="detail-tag tag-local">&#127758; 地方官专属 · ' + item.localLevel + '</div>';
+                }
+
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">职责描述</div>';
+                html += '<div class="detail-text">' + escapeHtml(item.desc) + '</div>';
+                html += '</div>';
+
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">史料出处</div>';
+                html += '<div class="detail-text"><span class="detail-tag tag-source">《隋书·百官志》</span></div>';
+                html += '</div>';
+
+                if (item.note) {
+                    html += '<div class="detail-section">';
+                    html += '<div class="detail-section-title">备注</div>';
+                    html += '<div class="detail-text"><span class="detail-tag tag-note">' + escapeHtml(item.note) + '</span></div>';
+                    html += '</div>';
+                }
+
+                if (item.isLocal) {
+                    html += '<div class="local-section">';
+                    html += '<div class="local-section-title">&#127758; 地方官专属</div>';
+                    html += '<div class="detail-text" style="font-size:12px;color:var(--text-secondary);">该官职为地方官，拥有特定管辖范围与治理权限。</div>';
+                    html += '<button class="unlock-btn" id="unlock-btn">&#128274; 解锁地方治理面板</button>';
+                    html += '<div class="unlock-content" id="unlock-content">';
+                    var local = LOCAL_DETAILS[item.localLevel];
+                    if (local) {
+                        html += '<div class="local-detail-item"><div class="local-detail-label">管辖范围</div><div class="local-detail-text">' + escapeHtml(local.jurisdiction) + '</div></div>';
+                        html += '<div class="local-detail-item"><div class="local-detail-label">主要职责</div><div class="local-detail-text">' + escapeHtml(local.duties) + '</div></div>';
+                        html += '<div class="local-detail-item"><div class="local-detail-label">权力范围</div><div class="local-detail-text">' + escapeHtml(local.powers) + '</div></div>';
+                        html += '<div class="local-detail-item"><div class="local-detail-label">典型实例</div><div class="local-detail-text">' + escapeHtml(local.examples) + '</div></div>';
+                    }
+                    html += '</div></div>';
+                }
+            } else if (type === 'ban') {
+                title.textContent = item.ban + '班';
+                subtitle.textContent = '梁天监十八班制';
+
+                html += '<div class="detail-tag tag-rank">第' + item.ban + '班</div>';
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">包含官职</div>';
+                html += '<div class="detail-text">' + escapeHtml(item.officials) + '</div>';
+                html += '</div>';
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">等级说明</div>';
+                html += '<div class="detail-text">' + escapeHtml(item.desc) + '</div>';
+                html += '</div>';
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">史料出处</div>';
+                html += '<div class="detail-text"><span class="detail-tag tag-source">《隋书·百官志》</span></div>';
+                html += '</div>';
+            } else if (type === 'general') {
+                title.textContent = '将军号 · ' + item.class + '班';
+                subtitle.textContent = '梁天监将军号十品二十四班';
+
+                html += '<div class="detail-tag tag-rank">' + item.grade + ' · ' + item.class + '班</div>';
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">将军名号</div>';
+                html += '<div class="detail-text">' + escapeHtml(item.names) + '</div>';
+                html += '</div>';
+                if (item.desc) {
+                    html += '<div class="detail-section">';
+                    html += '<div class="detail-section-title">说明</div>';
+                    html += '<div class="detail-text">' + escapeHtml(item.desc) + '</div>';
+                    html += '</div>';
+                }
+                html += '<div class="detail-section">';
+                html += '<div class="detail-section-title">史料出处</div>';
+                html += '<div class="detail-text"><span class="detail-tag tag-source">《隋书·百官志》</span></div>';
+                html += '</div>';
+            }
+
+            body.innerHTML = html;
+
+            // 绑定解锁按钮
+            var unlockBtn = document.getElementById('unlock-btn');
+            if (unlockBtn) {
+                unlockBtn.addEventListener('click', function() {
+                    var content = document.getElementById('unlock-content');
+                    content.classList.toggle('open');
+                    this.innerHTML = content.classList.contains('open') ? '&#128275; 已解锁地方治理面板' : '&#128274; 解锁地方治理面板';
+                });
+            }
+        }
+
+        // ===== 事件绑定 =====
+        function bindOfficialClicks() {
+            document.querySelectorAll('.official-item').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var catId = this.dataset.cat;
+                    var idx = parseInt(this.dataset.idx);
+                    var data = DYNASTY_MAP[state.dynasty];
+                    var cat = data.categories.find(function(c) { return c.id === catId; });
+                    if (!cat) return;
+                    var official = cat.officials[idx];
+                    state.selectedItem = { key: this.dataset.key, data: official, type: 'official' };
+                    renderDisplay();
+                    renderDetail(official, 'official');
+                });
+            });
+        }
+
+        function bindBanClicks() {
+            document.querySelectorAll('.ban-row').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var ban = parseInt(this.dataset.ban);
+                    var data = LIANG_DATA.banSystem.find(function(b) { return b.ban === ban; });
+                    if (!data) return;
+                    state.selectedItem = { ban: ban, data: data, type: 'ban' };
+                    renderDisplay();
+                    renderDetail(data, 'ban');
+                });
+            });
+        }
+
+        function bindGeneralClicks() {
+            document.querySelectorAll('.general-table tbody tr').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    var classNum = parseInt(this.dataset.class);
+                    var data = LIANG_DATA.generalRanks.find(function(r) { return r.class === classNum; });
+                    if (!data) return;
+                    state.selectedItem = { classNum: classNum, data: data, type: 'general' };
+                    renderDisplay();
+                    renderDetail(data, 'general');
+                });
+            });
+        }
+
+        function bindTooltipEvents() {
+            var tooltip = document.getElementById('tooltip');
+            document.querySelectorAll('.hint-icon').forEach(function(el) {
+                el.addEventListener('mouseenter', function(e) {
+                    tooltip.textContent = this.dataset.tip;
+                    tooltip.classList.add('show');
+                    updateTooltipPos(e);
+                });
+                el.addEventListener('mousemove', updateTooltipPos);
+                el.addEventListener('mouseleave', function() {
+                    tooltip.classList.remove('show');
+                });
+            });
+        }
+
+        function updateTooltipPos(e) {
+            var tooltip = document.getElementById('tooltip');
+            var x = e.clientX + 12;
+            var y = e.clientY + 12;
+            if (x + tooltip.offsetWidth > window.innerWidth) x = e.clientX - tooltip.offsetWidth - 8;
+            if (y + tooltip.offsetHeight > window.innerHeight) y = e.clientY - tooltip.offsetHeight - 8;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+        }
+
+        // ===== 控制面板事件 =====
+        document.querySelectorAll('.dynasty-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.dynasty-btn').forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                state.dynasty = this.dataset.dynasty;
+                state.selectedItem = null;
+                renderDetail(null);
+                renderDisplay();
+            });
+        });
+
+        document.querySelectorAll('.filter-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.filter-tab').forEach(function(t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                state.filter = this.dataset.filter;
+                state.selectedItem = null;
+                renderDisplay();
+            });
+        });
+
+        document.querySelectorAll('.liang-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.liang-tab').forEach(function(t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                state.liangTab = this.dataset.liangTab;
+                state.selectedItem = null;
+                renderDetail(null);
+                renderDisplay();
+            });
+        });
+
+        document.getElementById('hint-toggle').addEventListener('click', function() {
+            this.classList.toggle('on');
+            state.hintEnabled = this.classList.contains('on');
+            renderDisplay();
+        });
+
+        // ===== 初始化 =====
+        renderDetail(null);
+        renderDisplay();
+    </script>
+</body>
+</html>

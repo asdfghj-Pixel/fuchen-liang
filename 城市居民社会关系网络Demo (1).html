@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>南朝浮生录 - 城市社会关系网络Demo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Noto Serif SC","SimSun",serif;background:#1a0f0a;color:#e8d5b7;overflow:auto;height:auto}
+.container{display:flex;height:100vh}
+.sidebar{width:320px;background:#2d1810;border-right:2px solid #5c3317;padding:0;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:20px;border-bottom:1px solid #5c3317;background:rgba(139,69,19,.1)}
+.sidebar-header h1{color:#d4a853;font-size:1.1em;letter-spacing:2px}
+.sidebar-header .subtitle{color:#8b6914;font-size:.8em;margin-top:4px}
+.identity-panel{padding:15px 20px;border-bottom:1px solid #5c3317}
+.identity-label{font-size:.8em;color:#b8956a;margin-bottom:8px;letter-spacing:1px}
+.identity-category{font-size:.72em;color:#8b6914;margin:10px 0 6px;letter-spacing:1px}
+.identity-buttons{display:flex;gap:6px;padding:0 0 10px;flex-wrap:wrap}
+.identity-btn{flex:1;min-width:70px;padding:8px 4px;border:1px solid #5c3317;background:rgba(26,15,10,.5);color:#b8956a;font-family:inherit;font-size:.72em;cursor:pointer;border-radius:6px;transition:all .25s;text-align:center;line-height:1.3}
+.identity-btn:hover{border-color:#8b4513;background:rgba(139,69,19,.15)}
+.identity-btn.active{border-color:#d4a853;background:rgba(212,168,83,.1);color:#d4a853;font-weight:bold}
+.identity-btn .btn-sub{display:block;font-size:.65em;color:#8b6914;margin-top:2px}
+.context-panel{padding:15px 20px;border-bottom:1px solid #5c3317}
+.context-label{font-size:.8em;color:#b8956a;margin-bottom:8px;letter-spacing:1px}
+.context-info{padding:12px 14px;border:1px solid #5c3317;background:rgba(139,69,19,.15);border-radius:6px}
+.context-time{color:#d4a853;font-size:1em;font-weight:bold;margin-bottom:4px}
+.context-place{color:#b8956a;font-size:.82em;line-height:1.6}
+.context-phase-tag{display:inline-block;padding:2px 8px;background:rgba(212,168,83,.15);color:#d4a853;border:1px solid #d4a853;border-radius:4px;font-size:.72em;margin-top:6px}
+.timeline-panel{flex:1;overflow-y:auto;padding:15px 20px}
+.timeline-panel::-webkit-scrollbar{width:4px}
+.timeline-panel::-webkit-scrollbar-track{background:transparent}
+.timeline-panel::-webkit-scrollbar-thumb{background:#5c3317;border-radius:2px}
+.timeline-title{font-size:.85em;color:#d4a853;margin-bottom:12px;letter-spacing:1px}
+.timeline-event{padding:10px 12px;margin-bottom:8px;background:rgba(26,15,10,.5);border:1px solid #3d1f0f;border-radius:8px;cursor:pointer;transition:all .2s;font-size:.82em}
+.timeline-event:hover{border-color:#8b4513;background:rgba(139,69,19,.1)}
+.timeline-event.active{border-color:#d4a853;background:rgba(212,168,83,.08)}
+.timeline-event .phase{color:#d4a853;font-weight:bold;font-size:.85em}
+.timeline-event .desc{color:#b8956a;margin-top:3px;font-size:.78em}
+.timeline-event .new-tag{display:inline-block;padding:1px 6px;background:rgba(60,180,120,.2);color:#69f0ae;border:1px solid #3cb478;border-radius:4px;font-size:.7em;margin-left:6px}
+.detail-panel{padding:15px 20px;border-top:1px solid #5c3317;max-height:280px;overflow-y:auto}
+.detail-panel::-webkit-scrollbar{width:4px}
+.detail-panel::-webkit-scrollbar-track{background:transparent}
+.detail-panel::-webkit-scrollbar-thumb{background:#5c3317;border-radius:2px}
+.detail-panel h3{color:#d4a853;font-size:.9em;margin-bottom:10px}
+.relation-list{list-style:none}
+.relation-list li{padding:6px 0;border-bottom:1px dashed #3d1f0f;font-size:.8em;display:flex;justify-content:space-between;align-items:center}
+.relation-list li:last-child{border-bottom:none}
+.relation-list .rel-name{color:#e8d5b7}
+.relation-list .rel-type{font-size:.7em;padding:1px 6px;border-radius:4px}
+.rel-blood{background:rgba(220,80,60,.2);color:#ff8a80;border:1px solid #dc5040}
+.rel-teacher{background:rgba(80,130,220,.2);color:#82b1ff;border:1px solid #5082dc}
+.rel-business{background:rgba(60,180,120,.2);color:#69f0ae;border:1px solid #3cb478}
+.rel-hometown{background:rgba(220,180,60,.2);color:#ffd54f;border:1px solid #dcb43c}
+.rel-patron{background:rgba(160,80,180,.2);color:#ea80fc;border:1px solid #a050b4}
+.rel-enemy{background:rgba(180,60,60,.2);color:#ff8a80;border:1px solid #b43c3c}
+.canvas-area{flex:1;position:relative;background:#1a0f0a}
+#networkCanvas{display:block;width:100%;height:100%;cursor:grab}
+#networkCanvas:active{cursor:grabbing}
+.controls{position:absolute;top:15px;right:15px;display:flex;gap:8px;z-index:10}
+.control-btn{padding:8px 14px;border:1px solid #5c3317;background:rgba(26,15,10,.9);color:#d4a853;font-family:inherit;font-size:.8em;cursor:pointer;border-radius:6px;transition:all .2s}
+.control-btn:hover{background:rgba(139,69,19,.4);border-color:#8b4513}
+.node-info{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(26,15,10,.95);border:1px solid #5c3317;border-radius:12px;padding:16px 20px;z-index:10;max-width:500px;display:none;backdrop-filter:blur(10px)}
+.node-info.show{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.node-info h3{color:#d4a853;font-size:1em;margin-bottom:8px}
+.node-info p{font-size:.82em;line-height:1.7;color:#e8d5b7}
+.node-info .tag-row{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.node-info .tag{padding:3px 10px;border-radius:12px;font-size:.72em}
+.node-info .quote{font-style:italic;color:#d4a853;border-left:3px solid #8b4513;padding-left:10px;margin:10px 0;font-size:.8em}
+.legend{position:absolute;top:60px;right:15px;background:rgba(26,15,10,.95);border:1px solid #5c3317;border-radius:8px;padding:12px 14px;z-index:10}
+.legend-title{font-size:.75em;color:#d4a853;margin-bottom:6px;letter-spacing:1px}
+.legend-item{display:flex;align-items:center;margin:4px 0;font-size:.72em;color:#b8956a}
+.legend-dot{width:10px;height:10px;border-radius:50%;margin-right:7px}
+.stats-bar{position:absolute;top:15px;left:20px;display:flex;gap:12px;z-index:10}
+.stat-item{padding:8px 14px;background:rgba(26,15,10,.9);border:1px solid #5c3317;border-radius:8px;text-align:center}
+.stat-item .num{color:#d4a853;font-size:1.2em;font-weight:bold}
+.stat-item .label{font-size:.7em;color:#8b6914;margin-top:2px}
+.toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(139,69,19,.95);border:1px solid #d4a853;padding:12px 24px;border-radius:8px;z-index:20;opacity:0;transition:opacity .5s;pointer-events:none;text-align:center;white-space:nowrap;max-width:90%}
+.toast.show{opacity:1}
+.toast h4{color:#d4a853;font-size:.9em;margin-bottom:4px}
+.toast p{font-size:.82em;color:#e8d5b7}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="sidebar">
+<div class="sidebar-header">
+<h1>城市社会关系网络</h1>
+<div class="subtitle">建康城秦淮河畔的烟火人间</div>
+</div>
+<div class="identity-panel">
+<div class="identity-label">选择身份</div>
+<div class="identity-category">手工业</div>
+<div class="identity-buttons" id="craftButtons"></div>
+<div class="identity-category">商人</div>
+<div class="identity-buttons" id="merchantButtons"></div>
+</div>
+<div class="context-panel">
+<div class="context-label">当前情境</div>
+<div class="context-info">
+<div class="context-time" id="contextTime"></div>
+<div class="context-place" id="contextPlace"></div>
+<div class="context-phase-tag" id="contextTag">初始</div>
+</div>
+</div>
+<div class="timeline-panel">
+<div class="timeline-title">时间线推进</div>
+<div id="timelineList"></div>
+</div>
+<div class="detail-panel" id="detailPanel" style="display:none">
+<h3>人物关系</h3>
+<ul class="relation-list" id="relationList"></ul>
+</div>
+</div>
+<div class="canvas-area" id="canvasArea">
+<div class="stats-bar">
+<div class="stat-item"><div class="num" id="statNodes">0</div><div class="label">关系节点</div></div>
+<div class="stat-item"><div class="num" id="statEdges">0</div><div class="label">关系连接</div></div>
+<div class="stat-item"><div class="num" id="statPhase">0</div><div class="label">已推进阶段</div></div>
+</div>
+<div class="controls">
+<button class="control-btn" onclick="resetNetwork()">重置</button>
+<button class="control-btn" onclick="advanceTimeline()" style="background:linear-gradient(135deg,#8b4513,#a0522d);color:#fff;border:none">推进时间线</button>
+</div>
+<canvas id="networkCanvas"></canvas>
+<div class="legend" id="legend"></div>
+<div class="node-info" id="nodeInfo">
+<h3 id="infoName"></h3>
+<p id="infoDesc"></p>
+<div class="quote" id="infoQuote"></div>
+<div class="tag-row" id="infoTags"></div>
+</div>
+<div class="toast" id="toast">
+<h4 id="toastTitle">新关系建立</h4>
+<p id="toastContent">内容</p>
+</div>
+</div>
+</div>
+
+<script>
+// ========== Canvas初始化 ==========
+var canvas = document.getElementById('networkCanvas');
+var ctx = canvas.getContext('2d');
+var cW = 0, cH = 0, dpr = window.devicePixelRatio || 1;
+function resizeCanvas() {
+    var area = document.getElementById('canvasArea');
+    cW = area.clientWidth || (window.innerWidth - 320);
+    cH = area.clientHeight || window.innerHeight;
+    if (cW < 200) cW = window.innerWidth - 320;
+    if (cH < 200) cH = window.innerHeight;
+    canvas.width = cW * dpr; canvas.height = cH * dpr;
+    canvas.style.width = cW + 'px'; canvas.style.height = cH + 'px';
+}
+resizeCanvas();
+
+// ========== 全局状态 ==========
+var currentId = 'weaver';
+var currentPhase = -1;
+var nodes = [], edges = [];
+var hoveredNode = null, selectedNode = null;
+var isDragging = false, dragNode = null, lastMX = 0, lastMY = 0;
+var scale = 1, panX = 0, panY = 0;
+
+// ========== 关系类型颜色 ==========
+var REL_COLORS = {
+    blood: '#dc5040', teacher: '#5082dc', business: '#3cb478',
+    hometown: '#dcb43c', patron: '#a050b4', enemy: '#b43c3c'
+};
+var REL_LABELS = {
+    blood: '血缘', teacher: '师徒', business: '商业',
+    hometown: '同乡/地缘', patron: '官民/依附', enemy: '冲突'
+};
+
+// ========== 身份配置 ==========
+var CRAFT_IDS = ['weaver','metalcaster','shipwright','porcelain','papermaker'];
+var MERCHANT_IDS = ['grassmarket','shopkeeper','travelmerchant'];
+var ALL_IDS = CRAFT_IDS.concat(MERCHANT_IDS);
+var ID_LABELS = {
+    weaver:'纺织匠人', metalcaster:'冶铸匠人', shipwright:'造船匠人',
+    porcelain:'制瓷匠人', papermaker:'造纸匠人',
+    grassmarket:'草市小贩', shopkeeper:'大市坐贾', travelmerchant:'行商'
+};
+var ID_SUBS = {
+    weaver:'秦淮河畔纺织', metalcaster:'城南冶铸作坊', shipwright:'朱雀航船坞',
+    porcelain:'越窑青瓷', papermaker:'银光纸作坊',
+    grassmarket:'村口摆摊', shopkeeper:'建康大市布商', travelmerchant:'南北互市'
+};
+
+// ================================================================
+// =====================  全部身份数据  =========================
+// ================================================================
+
+var ALL_DATA = {};
+
+// ==================== 1. 纺织匠人 ====================
+ALL_DATA.weaver = {
+    contextDefault: {time:'天监年间 · 建康城', place:'秦淮河畔，你的纺织作坊里机杼声声。祖传的手艺养活了一家老小，日子虽然不富裕，但靠着织出来的绢布在建康城也算站住了脚。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（纺织匠人）',type:'player',x:0,y:0,r:26,
+         desc:'建康城秦淮河畔纺织作坊的主人，祖传手艺。每日天不亮便起，络丝、纺线、织布，一匹上好的绢布要织上三五日。妻子帮忙络丝理线，日子虽辛苦但踏实。',
+         quote:'豫章一年蚕四五熟，永嘉一年八熟。',source:'《齐民要术·种桑柘》',tags:['匠心','生计']},
+        {id:'wife',name:'妻子',type:'blood',x:-140,y:-90,r:18,
+         desc:'同为匠人之女，自幼便习得纺织本领。嫁过来后帮你络丝理线，一双巧手不输于你。最操心的是女儿小兰的前途。',
+         quote:'男务耕桑，女勤织纴。',source:'《颜氏家训·治家》',tags:['家眷']},
+        {id:'master',name:'师父（退休老匠人）',type:'teacher',x:130,y:-80,r:18,
+         desc:'退休的老匠人，教会你全套纺织技艺——从选茧缫丝到提花织锦。如今年事已高，偶尔来作坊看看，给你指点一二。',
+         quote:'积财千万，不如薄技在身。',source:'《颜氏家训·勉学》',tags:['师恩']},
+        {id:'zhangzhishi',name:'行会张执事',type:'business',x:-90,y:110,r:17,
+         desc:'纺织行会的执事，掌握行会订单分配。为人精明但不失公道，与各家作坊关系微妙。谁跟他走得近，谁就有更多活儿。',
+         quote:'行会者，百工之约也。',source:'',tags:['行会']},
+        {id:'fangdong',name:'房东陈大户',type:'patron',x:100,y:100,r:16,
+         desc:'建康城的小地主，你租了他的铺面开作坊。租金不低但地段好，秦淮河畔来往客商多，生意还过得去。',
+         quote:'百姓内门千重，府第难同。',source:'《洛阳伽蓝记》',tags:['官民']}
+    ],
+    initialEdges: [
+        {from:'player',to:'wife',type:'blood',strength:10},
+        {from:'player',to:'master',type:'teacher',strength:9},
+        {from:'player',to:'zhangzhishi',type:'business',strength:6},
+        {from:'player',to:'fangdong',type:'patron',strength:4}
+    ],
+    timeline: [
+        {phase:'日常接单',contextTime:'天监年间 · 日常接单',
+         contextPlace:'作坊运转顺利，城里的绣娘、草市商贩、城郊蚕农陆续找上门来。你开始在建康城的纺织行当里崭露头角。',
+         nodes:[
+            {id:'xiuniang',name:'士族绣娘',type:'business',x:-180,y:-40,r:15,
+             desc:'兰陵萧家的绣娘，常来你的作坊买丝线。她做工精细，与高门女眷往来密切。',
+             quote:'加以红紫之服，绣以花纹。',source:'《颜氏家训·勉学》',tags:['士族','商业']},
+            {id:'juanshang',name:'草市绢商',type:'business',x:0,y:-210,r:16,
+             desc:'城南草市的绢布商贩，定期来你这里进货。出手大方，结账爽快，是你最稳定的客户。',
+             quote:'商贾之路，通四方之珍异。',source:'',tags:['客户']},
+            {id:'canfu',name:'供货蚕农',type:'hometown',x:200,y:-60,r:15,
+             desc:'城郊养蚕的农家，每年春蚕上市时给你供茧。关系好不好直接影响原料价格。春蚕贵如金，好茧出好丝。',
+             quote:'豫章一年蚕四五熟，永嘉一年八熟。',source:'《齐民要术·种桑柘》',tags:['地缘','原料']}
+         ],
+         edges:[
+            {from:'player',to:'xiuniang',type:'business',strength:5},
+            {from:'player',to:'juanshang',type:'business',strength:6},
+            {from:'player',to:'canfu',type:'hometown',strength:4}
+         ],
+         toast:{title:'日常接单',content:'绣娘、绢商、蚕农——你的社会关系网在建康城悄然展开。'}},
+        {phase:'官府大单',contextTime:'天监年间 · 官府大单',
+         contextPlace:'官府的采购找上门来，若能拿下这笔订单，一年的生意就有了着落。但竞争对手也盯上了这块肥肉。',
+         nodes:[
+            {id:'guanfu',name:'官府采购',type:'patron',x:220,y:130,r:17,
+             desc:'官府少府的采购，听说你的绢布品质不错，想来考察。若能拿到官府订单，一年的生意就有了着落。',
+             quote:'百工各以其器食之。',source:'《周礼·考工记》',tags:['官府','订单']},
+            {id:'jingzheng',name:'竞争对手',type:'enemy',x:-220,y:60,r:16,
+             desc:'另一家纺织作坊的老板，跟你抢官府订单。他背后有人——县丞的远亲。手段不小。',
+             quote:'同利者相妒。',source:'',tags:['竞争']},
+            {id:'ciyou',name:'越窑瓷商',type:'business',x:0,y:250,r:15,
+             desc:'从越州来的青瓷商人，提议用瓷器换你的绢布，两边各取所需。越窑青瓷在建康城颇受欢迎。',
+             quote:'九秋风露越窑开，夺得千峰翠色来。',source:'《茶经》引',tags:['物物交换']}
+         ],
+         edges:[
+            {from:'player',to:'guanfu',type:'patron',strength:7},
+            {from:'player',to:'jingzheng',type:'enemy',strength:-5},
+            {from:'player',to:'ciyou',type:'business',strength:4}
+         ],
+         toast:{title:'官府大单',content:'官府采购找上门，竞争对手虎视眈眈。一笔大生意的前夜。'}},
+        {phase:'技艺突破',contextTime:'天监年间 · 技艺突破',
+         contextPlace:'海外商人带来了异域的需求，寺院住持预付全款定做袈裟经幡。波斯商人与越窑瓷商换货，你的绢布成了硬通货。',
+         nodes:[
+            {id:'bosichang',name:'波斯商人',type:'business',x:200,y:-180,r:16,
+             desc:'从海外来的商人，见到你的绢布大为赞赏。他提出用香料、宝石交换，但要求你做一种特别的织法。',
+             quote:'西域贾人以金缯易丝。',source:'',tags:['海外','贸易']},
+            {id:'zhuchi',name:'同泰寺住持',type:'patron',x:-200,y:-160,r:17,
+             desc:'同泰寺住持，需要大量绢布用于制作袈裟和经幡。预付全款，但要求染色必须用最好的料。',
+             quote:'同泰寺，梁武帝所造也。',source:'《南史·梁本纪》',tags:['寺院','大单']},
+            {id:'xiaolan',name:'女儿小兰',type:'blood',x:0,y:-280,r:16,
+             desc:'你的女儿，十三岁，纺织天赋惊人。你想把技艺传给她，但担心"传男不传女"的祖训。',
+             quote:'男务耕桑，女勤织纴。',source:'《颜氏家训·治家》',tags:['传承','天赋']}
+         ],
+         edges:[
+            {from:'player',to:'bosichang',type:'business',strength:5},
+            {from:'player',to:'zhuchi',type:'patron',strength:8},
+            {from:'player',to:'xiaolan',type:'blood',strength:9}
+         ],
+         toast:{title:'技艺突破',content:'波斯商人、寺院大单、女儿天赋——技艺与传承的抉择时刻。'}},
+        {phase:'商业危机',contextTime:'天监末年 · 商业危机',
+         contextPlace:'市令忽然加征纺织税，还暗示要"孝敬"才肯少收。行会张执事劝你忍气吞声，但隔壁作坊已被逼关门。',
+         nodes:[
+            {id:'shiling',name:'市令',type:'enemy',x:-180,y:200,r:17,
+             desc:'建康城管理市场的市令，以检查规格为由索要贿赂。不交钱就给你找麻烦，称你的绢布"不合规制"。',
+             quote:'市井之臣，以利为心。',source:'',tags:['腐败','压迫']},
+            {id:'shuiwu',name:'税吏',type:'enemy',x:160,y:220,r:15,
+             desc:'市令手下的小吏，每月来收税时总是多算几匹布。你敢怒不敢言，同行中已有被逼关门的。',
+             quote:'赋税之重，民不聊生。',source:'',tags:['税收']},
+            {id:'xiaoben',name:'小本同行',type:'hometown',x:0,y:300,r:14,
+             desc:'隔壁小作坊的匠人，被市令逼得交不起税，准备关了铺面回乡。他劝你也早做打算。',
+             quote:'',source:'',tags:['同业','困苦']}
+         ],
+         edges:[
+            {from:'player',to:'shiling',type:'enemy',strength:-7},
+            {from:'player',to:'shuiwu',type:'enemy',strength:-4},
+            {from:'player',to:'xiaoben',type:'hometown',strength:5}
+         ],
+         toast:{title:'商业危机',content:'市令索贿，税吏加征。小匠人在官商夹缝中的挣扎。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景军攻入建康城，百年繁华化为焦土。你的作坊被洗劫一空，师父留下的那台织机也被砸了。战火中，是随军而去，还是带着同行匠人南下？',
+         nodes:[
+            {id:'luandui_w',name:'乱兵',type:'enemy',x:0,y:300,r:18,
+             desc:'侯景军攻入建康城，沿街烧杀抢掠。你的作坊被洗劫一空，师父留下的那台织机也被砸了。',
+             quote:'侯景之乱，台城被围百日。',source:'《南史·侯景传》',tags:['战乱']},
+            {id:'taonan_tx',name:'逃难同行匠人',type:'hometown',x:-200,y:180,r:16,
+             desc:'几个同行匠人一起逃出城，带着残存的工具和家眷。你答应帮他们安顿下来。',
+             quote:'',source:'',tags:['同袍','逃难']},
+            {id:'liangjun_w',name:'梁军接应',type:'patron',x:200,y:200,r:16,
+             desc:'王僧辩的军队从上游赶来平叛。你需要决定：是跟着军队走，还是等着收复建康？',
+             quote:'王僧辩讨侯景，军至姑孰。',source:'《南史·王僧辩传》',tags:['军队','希望']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_w',type:'enemy',strength:-10},
+            {from:'player',to:'taonan_tx',type:'hometown',strength:6},
+            {from:'player',to:'liangjun_w',type:'patron',strength:4}
+         ],
+         toast:{title:'侯景之乱',content:'建康城破，百年繁华化为焦土。乱世之中，何去何从？'}}
+    ]
+};
+
+// ==================== 2. 冶铸匠人 ====================
+ALL_DATA.metalcaster = {
+    contextDefault: {time:'天监年间 · 建康城', place:'建康城南冶铸作坊，炉火通明。你师承名门，善铸铁器。水排鼓风，灌钢淬火，每一件铁器都凝结着匠人心血。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（冶铸匠人）',type:'player',x:0,y:0,r:26,
+         desc:'建康城南冶铸作坊的匠人，师从名师，以冶铁铸器为业。每日与炉火为伴，鼓风、熔铁、浇铸、淬火，件件铁器须精益求精。',
+         quote:'灌钢法，杂炼生鍱作刀镰者。',source:'陶弘景《本草经集注》',tags:['冶铸','技艺']},
+        {id:'shixiong',name:'师兄（同门）',type:'blood',x:-140,y:-90,r:17,
+         desc:'与你在同一座炉前学艺的师兄，现在隔壁开了自己的铸铁铺。两家人常走动，互相照应。',
+         quote:'同门兄弟，如手足也。',source:'',tags:['同门','互助']},
+        {id:'master_mc',name:'师父（老师傅）',type:'teacher',x:130,y:-80,r:18,
+         desc:'老一辈冶铸名师，教会你整套冶铁技艺。最拿手的是灌钢法——将生铁和熟铁合炼，能出上好钢材。',
+         quote:'炼铁使柔铁为刚，用灌钢之法。',source:'陶弘景《本草经集注》',tags:['师恩','灌钢']},
+        {id:'junxuguan',name:'军需官（官府订单）',type:'patron',x:-90,y:110,r:17,
+         desc:'朝廷军器监的军需官，负责军械采购。常来作坊验收铁器，要求严格但赏赐从不拖欠。',
+         quote:'甲兵之利，在乎精良。',source:'',tags:['官府','军需']},
+        {id:'hanghuizhishi_mc',name:'行会执事',type:'business',x:100,y:100,r:16,
+         desc:'冶铸行会的执事，管理各家作坊的分工协作。原材料统购统销，行会规矩不可破。',
+         quote:'百工有籍，各安其业。',source:'',tags:['行会']}
+    ],
+    initialEdges: [
+        {from:'player',to:'shixiong',type:'blood',strength:7},
+        {from:'player',to:'master_mc',type:'teacher',strength:9},
+        {from:'player',to:'junxuguan',type:'patron',strength:6},
+        {from:'player',to:'hanghuizhishi_mc',type:'business',strength:5}
+    ],
+    timeline: [
+        {phase:'水排初识',contextTime:'天监年间 · 水排初识',
+         contextPlace:'你从古籍中找到水排鼓风的记载，与师兄合力仿造，炉温大增。新学徒慕名而来，县衙也闻讯来订农具。',
+         nodes:[
+            {id:'shuilun',name:'水轮维护匠人',type:'business',x:0,y:-210,r:16,
+             desc:'帮你安装和维护水排的水轮匠人。水排结构精密，非专业匠人不能修。二人合作各取所长。',
+             quote:'杜诗造作水排，铸为农器，用力少，见功多，百姓便之。',source:'《后汉书·杜诗传》',tags:['技术','合作']},
+            {id:'xuetu',name:'新来的学徒',type:'teacher',x:-180,y:-40,r:15,
+             desc:'听说你用水排鼓风的名声，从邻县赶来拜师。手脚还算勤快，但需严加管教。',
+             quote:'少而学之于师。',source:'《礼记·学记》',tags:['师徒']},
+            {id:'xianya',name:'县衙订农具',type:'business',x:200,y:-60,r:15,
+             desc:'县衙听说你的铁器品质上乘，派人来订一批农具——犁头、锄头、镰刀，数量不小。',
+             quote:'工欲善其事，必先利其器。',source:'《论语·卫灵公》',tags:['官府','订单']}
+         ],
+         edges:[
+            {from:'player',to:'shuilun',type:'business',strength:5},
+            {from:'player',to:'xuetu',type:'teacher',strength:6},
+            {from:'player',to:'xianya',type:'business',strength:7}
+         ],
+         toast:{title:'水排初识',content:'水排鼓风，炉火更旺。学徒来了，官府订单也来了。'}},
+        {phase:'灌钢法突破',contextTime:'天监年间 · 灌钢法突破',
+         contextPlace:'你在师父灌钢法的基础上加以改进，炼出了前所未有的好钢。陶弘景听闻后亲自来记入药典，军器监也闻风而动。',
+         nodes:[
+            {id:'taohongjing',name:'陶弘景',type:'patron',x:220,y:130,r:17,
+             desc:'著名道士、医药学家陶弘景，听闻你的灌钢法后亲自来考察，将此法记入《本草经集注》。',
+             quote:'灌钢法，杂炼生鍱作刀镰者。',source:'陶弘景《重修政和证类本草》',tags:['名人','记载']},
+            {id:'junqijian',name:'军器监来人',type:'patron',x:-200,y:60,r:16,
+             desc:'朝廷军器监派人来打探你的铸钢技术，暗示若肯为官府铸兵器，赏赐不薄。',
+             quote:'军器所须，取办于民。',source:'',tags:['军方','试探']},
+            {id:'yanhong_mc',name:'竞争对手',type:'enemy',x:0,y:250,r:16,
+             desc:'城东的冶铸匠人，嫉妒你的灌钢法名声。四处散布谣言说你偷了他的配方。',
+             quote:'妒贤嫉能，人之常情。',source:'',tags:['竞争','谣言']}
+         ],
+         edges:[
+            {from:'player',to:'taohongjing',type:'patron',strength:8},
+            {from:'player',to:'junqijian',type:'patron',strength:5},
+            {from:'player',to:'yanhong_mc',type:'enemy',strength:-5}
+         ],
+         toast:{title:'灌钢法突破',content:'陶弘景记入药典，军器监闻风而至——名利之间暗流涌动。'}},
+        {phase:'军需大单',contextTime:'天监年间 · 军需大单',
+         contextPlace:'梁朝北伐在即，军器监下了一笔大单——铸刀、铸甲、铸箭头。工期紧、数量大，你不得不加炉加人。',
+         nodes:[
+            {id:'tiekuang',name:'铁矿石供应商',type:'business',x:200,y:-180,r:16,
+             desc:'从外地运来铁矿石的商人，军需大单让他的生意也红火了起来。两人互相依仗。',
+             quote:'铁产甚广，冶铸不缺。',source:'',tags:['原料']},
+            {id:'jiangong',name:'监工',type:'patron',x:-200,y:-160,r:16,
+             desc:'官府派来的监工，日夜守在炉前。稍有偷工减料便上报，令你如芒在背。',
+             quote:'官监之严，不可懈怠。',source:'',tags:['压力','官府']},
+            {id:'tanshang',name:'炭商',type:'business',x:0,y:-280,r:15,
+             desc:'专门供应冶铸用木炭的商人。木炭品质直接关系铸铁好坏，这层关系马虎不得。',
+             quote:'冶铸者，炭为首务。',source:'',tags:['商业','原料']}
+         ],
+         edges:[
+            {from:'player',to:'tiekuang',type:'business',strength:6},
+            {from:'player',to:'jiangong',type:'patron',strength:3},
+            {from:'player',to:'tanshang',type:'business',strength:5}
+         ],
+         toast:{title:'军需大单',content:'军令如山，日夜赶工。军需大单是机遇也是枷锁。'}},
+        {phase:'同行竞争',contextTime:'天监末年 · 同行竞争',
+         contextPlace:'灌钢法的名声引来了更多竞争者。城西新开了一家铸铁作坊，据说请了北方的匠人，价格比你低三成。',
+         nodes:[
+            {id:'xinfang',name:'城西新作坊',type:'enemy',x:-180,y:200,r:16,
+             desc:'新开的冶铸作坊，请了从北边来的匠人，以低价抢生意。你怀疑他偷学了灌钢法。',
+             quote:'利之所在，争者必多。',source:'',tags:['竞争','价格战']},
+            {id:'tongxing',name:'老客户转单',type:'business',x:160,y:220,r:15,
+             desc:'跟了你多年的老客户，因为城西作坊价格更低，开始犹豫要不要换供货商。',
+             quote:'',source:'',tags:['客户流失']},
+            {id:'hanghuizhang',name:'行会会长',type:'patron',x:0,y:300,r:17,
+             desc:'冶铸行会的会长，出面调解价格之争。暗示你们两家划行规市、各守地盘。',
+             quote:'行规不可废，同行莫相害。',source:'',tags:['行会','调解']}
+         ],
+         edges:[
+            {from:'player',to:'xinfang',type:'enemy',strength:-6},
+            {from:'player',to:'tongxing',type:'business',strength:3},
+            {from:'player',to:'hanghuizhang',type:'patron',strength:5}
+         ],
+         toast:{title:'同行竞争',content:'新对手低价抢客，行会出面调解。价格与品质的两难。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景军南下，闻知你是冶铸好手，派人前来招揽——若不从便毁了炉子杀人。梁军也需铸兵器，你夹在两军之间。',
+         nodes:[
+            {id:'luandui_mc',name:'乱兵劫炉',type:'enemy',x:0,y:300,r:18,
+             desc:'侯景的乱兵冲入作坊，砸毁了一座炼铁炉，抢走了存铁。威胁你若不铸兵器便杀全家。',
+             quote:'侯景至建康，大肆杀掠。',source:'《南史·侯景传》',tags:['战乱','威胁']},
+            {id:'suijun_zhu',name:'随军铸兵器',type:'patron',x:-200,y:180,r:16,
+             desc:'被乱兵裹挟着为侯景军铸兵器，日夜不休。你不愿为叛军效命，但刀架在脖子上。',
+             quote:'身不由己，铸铁如铸泪。',source:'',tags:['胁迫']},
+            {id:'taonan_tongbao',name:'逃难同袍',type:'hometown',x:200,y:200,r:16,
+             desc:'师兄带着几个同炉匠人逃出城，捎信来让你找机会一起南下。炉子可以再建，人命只有一条。',
+             quote:'',source:'',tags:['同袍','逃难']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_mc',type:'enemy',strength:-10},
+            {from:'player',to:'suijun_zhu',type:'patron',strength:-3},
+            {from:'player',to:'taonan_tongbao',type:'hometown',strength:7}
+         ],
+         toast:{title:'侯景之乱',content:'炉火仍在，但兵刃已指。冶铸匠人，铸的是兵器还是命运？'}}
+    ]
+};
+
+// ==================== 3. 造船匠人 ====================
+ALL_DATA.shipwright = {
+    contextDefault: {time:'天监年间 · 建康城', place:'建康城朱雀航旁，船坞里锤声不断。你是世代造船的匠人，朱雀航是南朝最大的造船基地，江面上千帆竞渡，皆出你手。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（造船匠人）',type:'player',x:0,y:0,r:26,
+         desc:'建康城朱雀航旁船坞的匠人，世代以造船为业。从选木、锯板到钉合、上漆，每道工序都烂熟于心。',
+         quote:'建康朱雀航，舟楫之盛，自古未有。',source:'《太平御览》引',tags:['造船','世家']},
+        {id:'chuanwu',name:'船坞管事',type:'patron',x:-90,y:110,r:17,
+         desc:'朱雀航船坞的管事，管理所有船匠的工分和派活。你技术最好，他总是把大活分给你。',
+         quote:'百工各有司，造船尤重管事。',source:'',tags:['管事','分配']},
+        {id:'shixiong_sw',name:'师兄',type:'blood',x:-140,y:-90,r:17,
+         desc:'同门学艺的师兄，专攻船体骨架。你两人搭档多年，一内一外，配合默契。',
+         quote:'同舟共济，工匠之谊。',source:'',tags:['同门','合作']},
+        {id:'chuanshang',name:'船商',type:'business',x:100,y:100,r:17,
+         desc:'跑长江中下游的大船商，经常订造运输船。出手阔绰，是船坞最大的金主之一。',
+         quote:'朱雀大航，商旅并凑。',source:'《建康实录》',tags:['商业','大客户']},
+        {id:'mucaishang',name:'木材商（同乡）',type:'hometown',x:130,y:-80,r:16,
+         desc:'你老家的同乡，在上游经营木材生意。给你供杉木、柏木，价钱公道，品质有保证。',
+         quote:'良材美器，造船之本。',source:'',tags:['同乡','原料']}
+    ],
+    initialEdges: [
+        {from:'player',to:'chuanwu',type:'patron',strength:7},
+        {from:'player',to:'shixiong_sw',type:'blood',strength:8},
+        {from:'player',to:'chuanshang',type:'business',strength:7},
+        {from:'player',to:'mucaishang',type:'hometown',strength:6}
+    ],
+    timeline: [
+        {phase:'学徒期',contextTime:'天监初年 · 学徒期',
+         contextPlace:'你刚从师父那里出师不久，在朱雀航船坞接些小活。渔船、渡船，虽然不起眼，但每一条都是你的招牌。',
+         nodes:[
+            {id:'yuchuandinghu',name:'渔船订户',type:'business',x:0,y:-210,r:15,
+             desc:'秦淮河边的渔户，合起来向你订了一条中型渔船。钱不多但数量稳定。',
+             quote:'',source:'',tags:['客户','小单']},
+            {id:'duchuanhu',name:'渡船船主',type:'business',x:-180,y:-40,r:15,
+             desc:'秦淮河上摆渡的老船主，旧船该换了，找你定造新渡船。这是你独立接的第一单。',
+             quote:'渡船者，利涉大川。',source:'',tags:['客户','第一单']},
+            {id:'tonghuo_sw',name:'船坞同伙',type:'hometown',x:200,y:-60,r:15,
+             desc:'一起在船坞干活的匠人兄弟们，分工合作——有人锯板、有人打钉、有人上桐油。',
+             quote:'',source:'',tags:['邻里','合作']}
+         ],
+         edges:[
+            {from:'player',to:'yuchuandinghu',type:'business',strength:4},
+            {from:'player',to:'duchuanhu',type:'business',strength:5},
+            {from:'player',to:'tonghuo_sw',type:'hometown',strength:6}
+         ],
+         toast:{title:'学徒期',content:'渔船、渡船、同伙——独立造船的第一步。'}},
+        {phase:'独立造船',contextTime:'天监中期 · 独立造船',
+         contextPlace:'你终于接到了第一笔大单——一条运粮的货船。木材商同乡帮忙备料，师兄协助骨架，独立造船的考验来了。',
+         nodes:[
+            {id:'yunliang',name:'运粮船商',type:'business',x:-200,y:60,r:16,
+             desc:'专门跑长江运粮的船商，需要坚固耐用的大船。三年一换船，是你的长期客户。',
+             quote:'江左运粮，赖舟楫之利。',source:'',tags:['客户','长期']},
+            {id:'tongxiang_mucai',name:'上游木材行',type:'hometown',x:220,y:130,r:16,
+             desc:'同乡木材商的合作伙伴，供应上好杉木。杉木轻韧耐水，是造船的上选之材。',
+             quote:'凡造船所用之材，杉木为上。',source:'《天工开物》',tags:['同乡','原料']},
+            {id:'jiangyi',name:'老船匠（师父的朋友）',type:'teacher',x:0,y:250,r:16,
+             desc:'朱雀航的老船匠，师父的故交。你遇到技术难题时常去请教，他不吝赐教。',
+             quote:'船之成败，系于匠手。',source:'',tags:['前辈','指导']}
+         ],
+         edges:[
+            {from:'player',to:'yunliang',type:'business',strength:6},
+            {from:'player',to:'tongxiang_mucai',type:'hometown',strength:5},
+            {from:'player',to:'jiangyi',type:'teacher',strength:5}
+         ],
+         toast:{title:'独立造船',content:'运粮大船，独立完工。你在朱雀航的名声渐起。'}},
+        {phase:'战船军需',contextTime:'天监后期 · 战船军需',
+         contextPlace:'梁朝水军需要新造战船，军需采办找到船坞管事点名要你主持。战船要求远高于商船，工期也紧。',
+         nodes:[
+            {id:'shuijun_caigou',name:'水军采办',type:'patron',x:200,y:-180,r:17,
+             desc:'梁朝水军的采办官，要求你造一批楼船和蒙冲战船。要求极高，但赏赐也丰厚。',
+             quote:'水军之利，在乎舟楫。',source:'',tags:['军方','大单']},
+            {id:'loujishi',name:'楼船设计图师',type:'business',x:-200,y:-160,r:16,
+             desc:'军中负责绘制战船图样的匠师，你按照他的图纸施工。但有些设计不切实际，需要你边造边改。',
+             quote:'楼船之制，高十余丈。',source:'《通典·兵》',tags:['技术','合作']},
+            {id:'jiangong_sw',name:'军中监工',type:'patron',x:0,y:-280,r:16,
+             desc:'派来监督战船进度的军官，每日来巡查。稍有拖延便上报，你压力极大。',
+             quote:'军令如山，违令者斩。',source:'',tags:['压力','军方']}
+         ],
+         edges:[
+            {from:'player',to:'shuijun_caigou',type:'patron',strength:8},
+            {from:'player',to:'loujishi',type:'business',strength:5},
+            {from:'player',to:'jiangong_sw',type:'patron',strength:3}
+         ],
+         toast:{title:'战船军需',content:'战船军需，楼船蒙冲。从匠人到军需供应商的跃升。'}},
+        {phase:'商船大单',contextTime:'天监末年 · 商船大单',
+         contextPlace:'战船完工后名声大振，大船商找上门来要订造一条远航的大商船。三条船线——运输船、战船、渔船齐头并进。',
+         nodes:[
+            {id:'dashangchuan',name:'远航商船东家',type:'business',x:-180,y:200,r:17,
+             desc:'建康城首屈一指的大船商，要订一条能跑远海的商船。出价极高，但要求也严苛。',
+             quote:'大船贾者，浮海交趾。',source:'《宋书·夷蛮传》',tags:['大单','远航']},
+            {id:'yanliao',name:'桐油供应商',type:'business',x:160,y:220,r:15,
+             desc:'专门供应船用桐油的商人。远航船需要上好桐油防腐蚀，这层关系至关重要。',
+             quote:'船底涂桐油，可防蛀蚀。',source:'',tags:['原料']},
+            {id:'xiaoxuetu',name:'你的小学徒',type:'teacher',x:0,y:300,r:15,
+             desc:'跟了你两年的学徒，手脚渐熟，可以独立做些小活了。你开始教他看图纸。',
+             quote:'教之以事而喻诸德。',source:'《礼记·文王世子》',tags:['师徒','传承']}
+         ],
+         edges:[
+            {from:'player',to:'dashangchuan',type:'business',strength:8},
+            {from:'player',to:'yanliao',type:'business',strength:5},
+            {from:'player',to:'xiaoxuetu',type:'teacher',strength:6}
+         ],
+         toast:{title:'商船大单',content:'远航商船大单在手，运输、战船、渔船三线齐发。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景之乱爆发，长江水道被封锁。战船需求激增，朱雀航船坞日夜赶工。乱兵逼近建康，你守着半完工的战船。',
+         nodes:[
+            {id:'luandui_sw',name:'乱兵烧船',type:'enemy',x:0,y:300,r:18,
+             desc:'侯景军逼近建康，沿江烧毁民船断绝退路。你的船坞也未能幸免，半成品船只付之一炬。',
+             quote:'侯景渡江，舟楫尽焚。',source:'《南史·侯景传》',tags:['战乱','毁灭']},
+            {id:'shuijun_zhao',name:'水军急召',type:'patron',x:-200,y:180,r:16,
+             desc:'王僧辩的水军紧急征用船匠，要你带人赶造战船抵抗侯景。这是为朝廷出力的机会。',
+             quote:'王僧辩率水军东讨。',source:'《南史·王僧辩传》',tags:['军队','希望']},
+            {id:'taonan_chuanren',name:'船匠同袍',type:'hometown',x:200,y:200,r:16,
+             desc:'朱雀航的船匠兄弟们聚在一起商议，有人主张随军南下，有人要守着船坞等收复。',
+             quote:'',source:'',tags:['同袍','抉择']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_sw',type:'enemy',strength:-10},
+            {from:'player',to:'shuijun_zhao',type:'patron',strength:7},
+            {from:'player',to:'taonan_chuanren',type:'hometown',strength:6}
+         ],
+         toast:{title:'侯景之乱',content:'战船需求激增，船坞却遭焚毁。乱世造船人的抉择。'}}
+    ]
+};
+
+// ==================== 4. 制瓷匠人 ====================
+ALL_DATA.porcelain = {
+    contextDefault: {time:'天监年间 · 建康城', place:'越窑青瓷作坊，窑火日夜不熄。你师承越窑名匠，以烧制青瓷为业。一色如冰、二色如玉，越窑青瓷名满天下。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（制瓷匠人）',type:'player',x:0,y:0,r:26,
+         desc:'越窑青瓷作坊的匠人，师从名匠，擅长烧制青瓷。从选土、拉坯到上釉、烧窑，道道工序精心把控。',
+         quote:'九秋风露越窑开，夺得千峰翠色来。',source:'《茶经》引',tags:['制瓷','技艺']},
+        {id:'master_pc',name:'师父',type:'teacher',x:130,y:-80,r:18,
+         desc:'越窑的老匠师，三代制瓷世家出身。教会你选土配釉的秘方，尤擅"秘色"青瓷的烧制。',
+         quote:'越窑青瓷，其色如玉，其声如磬。',source:'',tags:['师恩','秘方']},
+        {id:'yaozhu',name:'窑主',type:'patron',x:-90,y:110,r:17,
+         desc:'出资经营瓷窑的窑主，负责销售和原料采购。你出技术，他出本钱，利润三七分成。',
+         quote:'窑主出钱，匠人出技，各得其所。',source:'',tags:['依附','合作']},
+        {id:'huashi',name:'画师（青瓷画花）',type:'business',x:100,y:100,r:16,
+         desc:'专攻青瓷刻花和印花装饰的画师，在坯体未干时刻出花纹，烧成后青翠欲滴。',
+         quote:'青瓷之上，刻花如画。',source:'',tags:['艺术','合作']},
+        {id:'tongxiang_cishang',name:'同乡瓷商',type:'hometown',x:-140,y:-90,r:16,
+         desc:'你老家的同乡，在建康城卖瓷器。你的青瓷多经他手卖出，两人合作多年互信互赖。',
+         quote:'',source:'',tags:['同乡','销售']}
+    ],
+    initialEdges: [
+        {from:'player',to:'master_pc',type:'teacher',strength:9},
+        {from:'player',to:'yaozhu',type:'patron',strength:7},
+        {from:'player',to:'huashi',type:'business',strength:6},
+        {from:'player',to:'tongxiang_cishang',type:'hometown',strength:6}
+    ],
+    timeline: [
+        {phase:'采土学艺',contextTime:'天监初年 · 采土学艺',
+         contextPlace:'你还在学艺阶段，师父带你上山选瓷土，下窑看火候。越窑的瓷土产自上林湖一带，品质为诸窑之冠。',
+         nodes:[
+            {id:'tutong',name:'瓷土矿工',type:'hometown',x:0,y:-210,r:15,
+             desc:'上林湖一带的矿工，世代采掘瓷土。哪里的土好、哪里有新矿，他了如指掌。',
+             quote:'越窑瓷土，出上林湖。',source:'',tags:['原料','地缘']},
+            {id:'luoci',name:'拉坯师傅',type:'teacher',x:-180,y:-40,r:15,
+             desc:'作坊里的拉坯老师傅，手速极快，一个坯子三两下便拉成型。你每日跟着他练基本功。',
+             quote:'拉坯者，制瓷之基也。',source:'',tags:['师徒','基本功']},
+            {id:'shangyao',name:'上釉学徒',type:'teacher',x:200,y:-60,r:14,
+             desc:'负责上釉的小学徒，比你入行还早。青瓷的釉色全凭上釉手法和窑温配合，这是最难的一关。',
+             quote:'釉色之美，在火候之间。',source:'',tags:['技术','配合']}
+         ],
+         edges:[
+            {from:'player',to:'tutong',type:'hometown',strength:4},
+            {from:'player',to:'luoci',type:'teacher',strength:6},
+            {from:'player',to:'shangyao',type:'teacher',strength:5}
+         ],
+         toast:{title:'采土学艺',content:'选土、拉坯、上釉——制瓷之路，从泥土与火焰开始。'}},
+        {phase:'独立烧窑',contextTime:'天监中期 · 独立烧窑',
+         contextPlace:'师父年迈退休，你接手了窑口。第一次独立掌窑，成败在此一举。开窑那一刻，青翠如玉的瓷器出窑，你终于出师了。',
+         nodes:[
+            {id:'mukang',name:'木柴供应商',type:'business',x:220,y:130,r:15,
+             desc:'专门供应烧窑用松木的商人。松木灰少、火力旺，是烧青瓷的最好燃料。',
+             quote:'烧瓷之薪，以松木为上。',source:'',tags:['原料','商业']},
+            {id:'ouyaoshang',name:'瓯窑瓷商',type:'business',x:-200,y:60,r:16,
+             desc:'从温州来的瓯窑瓷器商人，想跟你换货。瓯窑白瓷与越窑青瓷各有千秋，互换销售。',
+             quote:'瓯窑青白，越窑青翠，各有佳致。',source:'',tags:['行内','交流']},
+            {id:'shiyizu',name:'士族主顾',type:'business',x:0,y:250,r:16,
+             desc:'建康城的士族王谢家仆，替主人来买青瓷器皿。士族家用器讲究，但出手也大方。',
+             quote:'王谢堂前，青瓷为器。',source:'',tags:['士族','高端客户']}
+         ],
+         edges:[
+            {from:'player',to:'mukang',type:'business',strength:5},
+            {from:'player',to:'ouyaoshang',type:'business',strength:5},
+            {from:'player',to:'shiyizu',type:'business',strength:7}
+         ],
+         toast:{title:'独立烧窑',content:'独立掌窑，青翠出窑。从学徒到匠师的蜕变。'}},
+        {phase:'寺院大单',contextTime:'天监后期 · 寺院大单',
+         contextPlace:'梁武帝崇佛，建康城寺院林立。同泰寺、大爱敬寺都需要大量青瓷器皿供佛用斋，这是天大的好生意。',
+         nodes:[
+            {id:'tongtaisi_pc',name:'同泰寺知客',type:'patron',x:200,y:-180,r:17,
+             desc:'同泰寺的知客僧，负责采购寺院用品。青瓷供碗、香炉、花瓶，一订就是上百件。',
+             quote:'同泰寺，梁武帝所造也。',source:'《南史·梁本纪》',tags:['寺院','大单']},
+            {id:'wuzhouyao',name:'婺州窑同行',type:'enemy',x:-200,y:-160,r:16,
+             desc:'婺州窑的匠人也来抢寺院订单，以低价竞标。他的青瓷釉色不如你，但价格便宜三成。',
+             quote:'婺州窑青，不及越窑翠。',source:'',tags:['竞争','价格']},
+            {id:'sengren',name:'游方僧人',type:'business',x:0,y:-280,r:15,
+             desc:'云游四方的僧人，见过各地名窑瓷器。他带来北方邢窑白瓷的样件，让你眼界大开。',
+             quote:'南青北白，各擅胜场。',source:'',tags:['见闻','交流']}
+         ],
+         edges:[
+            {from:'player',to:'tongtaisi_pc',type:'patron',strength:8},
+            {from:'player',to:'wuzhouyao',type:'enemy',strength:-5},
+            {from:'player',to:'sengren',type:'business',strength:4}
+         ],
+         toast:{title:'寺院大单',content:'同泰寺百件大单，婺州窑低价竞争。青瓷之巅的较量。'}},
+        {phase:'海外需求',contextTime:'天监末年 · 海外需求',
+         contextPlace:'海外商船带来新需求——波斯、天竺的商人争相购买越窑青瓷。你的瓷器远销海外，名声甚至传到了建康宫廷。',
+         nodes:[
+            {id:'haiwaishang',name:'海外商船东家',type:'business',x:-180,y:200,r:17,
+             desc:'跑海外航线的船商，专门收购越窑青瓷运往天竺和波斯。他出价极高，但要大批量交货。',
+             quote:'越瓷入海，远销异域。',source:'',tags:['海外','大单']},
+            {id:'gongting',name:'宫廷采办',type:'patron',x:160,y:220,r:17,
+             desc:'宫廷少府的采办，听说你的青瓷名满建康，来订一批御用瓷器。若能入宫，便是最大荣耀。',
+             quote:'秘色瓷，越窑之精品也。',source:'',tags:['宫廷','荣耀']},
+            {id:'shiguan',name:'市舶管理',type:'patron',x:0,y:300,r:16,
+             desc:'管理海外贸易的市舶官员，暗示每笔海外生意要"纳一份"才放行。否则以"禁物外流"论处。',
+             quote:'关市之税，法有定规。',source:'《通典·食货》',tags:['关卡','税费']}
+         ],
+         edges:[
+            {from:'player',to:'haiwaishang',type:'business',strength:7},
+            {from:'player',to:'gongting',type:'patron',strength:8},
+            {from:'player',to:'shiguan',type:'patron',strength:3}
+         ],
+         toast:{title:'海外需求',content:'青瓷远销海外，宫廷也来下订。名利双收之际暗藏风险。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景军攻入建康，窑场被毁，窑主携款逃走。你守着几件未出窑的瓷器，在废墟中思索前路。',
+         nodes:[
+            {id:'luandui_pc',name:'乱兵毁窑',type:'enemy',x:0,y:300,r:18,
+             desc:'侯景军烧杀至窑场，砸毁窑炉，抢走成品瓷器。几代人心血的窑口毁于一旦。',
+             quote:'侯景之乱，台城内外尽成焦土。',source:'《南史·侯景传》',tags:['战乱','毁灭']},
+            {id:'taopao_yaozhu',name:'窑主携款逃走',type:'enemy',x:-200,y:180,r:16,
+             desc:'窑主听说乱兵来了，连夜带着钱财跑了，连你的工钱都没结。信任在战乱中一文不值。',
+             quote:'',source:'',tags:['背叛','困境']},
+            {id:'nanxia_ci',name:'南逃同行',type:'hometown',x:200,y:200,r:16,
+             desc:'几个制瓷同行商议一起南下会稽，那里越窑根基深厚，可以重建窑口。',
+             quote:'会稽上林湖，越窑之祖地也。',source:'',tags:['同袍','重建']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_pc',type:'enemy',strength:-10},
+            {from:'player',to:'taopao_yaozhu',type:'enemy',strength:-6},
+            {from:'player',to:'nanxia_ci',type:'hometown',strength:7}
+         ],
+         toast:{title:'侯景之乱',content:'窑毁人散，窑主携款而逃。青瓷的火种，能否在乱世中延续？'}}
+    ]
+};
+
+// ==================== 5. 造纸匠人 ====================
+ALL_DATA.papermaker = {
+    contextDefault: {time:'天监年间 · 建康城', place:'建康城银光纸作坊，纸浆飘香。你师从名师，擅长压光染色技艺。建康城的书肆、寺院、官署都离不开你的纸。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（造纸匠人）',type:'player',x:0,y:0,r:26,
+         desc:'建康城银光纸作坊的匠人，师承名师，擅压光染色。所造纸张光洁如镜，染色均匀，在建康纸行中小有名气。',
+         quote:'纸上之艺，压光为最。',source:'',tags:['造纸','技艺']},
+        {id:'master_pm',name:'师父',type:'teacher',x:130,y:-80,r:18,
+         desc:'造纸世家的老师傅，传你压光染色绝技。他会用砑石反复碾压纸面，使之光滑如玉。黄檗染纸防虫之法亦是他所传。',
+         quote:'以黄檗染纸，可辟蠹。',source:'《齐民要术·杂说》',tags:['师恩','秘技']},
+        {id:'zhishang',name:'纸商',type:'business',x:-90,y:110,r:17,
+         desc:'专门经营纸业批发的商人，每月定期来你作坊进货。你的银光纸多经他手卖往各地。',
+         quote:'建康之纸，行销四方。',source:'',tags:['批发','销售']},
+        {id:'shusilao',name:'书肆老板',type:'business',x:100,y:100,r:16,
+         desc:'建康城书肆的掌柜，需要大量好纸来抄写经书和文集。是你的长期大客户。',
+         quote:'书肆之中，纸墨为重。',source:'',tags:['客户','书业']},
+        {id:'hanghuizhishi_pm',name:'行会执事',type:'patron',x:-140,y:-90,r:16,
+         desc:'造纸行会的执事，管理纸价和产量。最近纸价波动大，他来各家作坊了解情况。',
+         quote:'百工有行，行有执事。',source:'',tags:['行会','管理']}
+    ],
+    initialEdges: [
+        {from:'player',to:'master_pm',type:'teacher',strength:9},
+        {from:'player',to:'zhishang',type:'business',strength:6},
+        {from:'player',to:'shusilao',type:'business',strength:7},
+        {from:'player',to:'hanghuizhishi_pm',type:'patron',strength:5}
+    ],
+    timeline: [
+        {phase:'学艺期',contextTime:'天监初年 · 学艺期',
+         contextPlace:'你刚从师父处出师，在作坊里独立造纸。从选料、浸泡、打浆到抄纸、晾干，每道工序都按师父教的来。',
+         nodes:[
+            {id:'liaoshang',name:'麻料供应商',type:'business',x:0,y:-210,r:15,
+             desc:'供应造纸用麻皮的商人。好纸用好料，麻皮的品质直接决定纸张的韧性和白度。',
+             quote:'造纸之料，以麻为上。',source:'',tags:['原料','商业']},
+            {id:'shuiyuan',name:'水源守护人',type:'hometown',x:-180,y:-40,r:15,
+             desc:'作坊旁边溪流的管理者，造纸离不开清水。上游若有污染，纸的品质就毁了。',
+             quote:'纸之良窳，水居其半。',source:'',tags:['地缘','水源']},
+            {id:'tongxue',name:'师兄弟',type:'blood',x:200,y:-60,r:15,
+             desc:'跟你在同一师父门下学艺的师弟，现在城东开了一家小纸坊。两人常交流手艺。',
+             quote:'同门之谊，技可互通。',source:'',tags:['同门','交流']}
+         ],
+         edges:[
+            {from:'player',to:'liaoshang',type:'business',strength:5},
+            {from:'player',to:'shuiyuan',type:'hometown',strength:4},
+            {from:'player',to:'tongxue',type:'blood',strength:6}
+         ],
+         toast:{title:'学艺期',content:'麻料、清水、师兄弟——造纸之路的根基。'}},
+        {phase:'压光技术',contextTime:'天监中期 · 压光技术',
+         contextPlace:'你掌握了师父的压光绝技，用砑石反复碾压纸面，使之光洁如镜。书肆老板大为赞赏，订单倍增。',
+         nodes:[
+            {id:'yashi_shang',name:'砑石商人',type:'business',x:220,y:130,r:15,
+             desc:'从外地运来上好砑石的商人。砑石质地细腻坚硬，是压光的关键工具，不能没有他。',
+             quote:'砑石者，压光之器也。',source:'',tags:['工具','商业']},
+            {id:'jingkeshang',name:'经馆抄经人',type:'business',x:-200,y:60,r:16,
+             desc:'建康城经馆的抄经人，需要大量光滑的纸来书写佛经。你的压光纸正合他意。',
+             quote:'写经之纸，以光洁为佳。',source:'',tags:['宗教','客户']},
+            {id:'wenren',name:'士族文人',type:'business',x:0,y:250,r:16,
+             desc:'建康城的士族文人，讲究用纸。听说你的银光纸品质上佳，亲自来作坊挑选。',
+             quote:'纸墨精良，方称雅事。',source:'',tags:['士族','高端客户']}
+         ],
+         edges:[
+            {from:'player',to:'yashi_shang',type:'business',strength:5},
+            {from:'player',to:'jingkeshang',type:'business',strength:6},
+            {from:'player',to:'wenren',type:'business',strength:7}
+         ],
+         toast:{title:'压光技术',content:'压光纸出，光洁如镜。士族文人、经馆抄经人慕名而来。'}},
+        {phase:'染色突破',contextTime:'天监后期 · 染色突破',
+         contextPlace:'你用黄檗汁染纸成功，这种纸不仅色泽古雅，更能防虫蛀。寺院大批量订货，经书可以保存数百年不坏。',
+         nodes:[
+            {id:'huangbo_shang',name:'黄檗药材商',type:'business',x:200,y:-180,r:16,
+             desc:'供应黄檗（黄柏树皮）的药材商人。黄檗染纸防虫是师父传的秘方，但黄檗价格不菲。',
+             quote:'以黄檗染纸，岁久不蠹。',source:'《齐民要术·杂说》',tags:['原料','秘方']},
+            {id:'dasimiao',name:'大寺院住持',type:'patron',x:-200,y:-160,r:17,
+             desc:'建康城大寺院的住持，需要大量黄檗染纸来抄写大藏经。预付全款，但交货期很紧。',
+             quote:'写经纸以黄檗染之，可辟蠹虫。',source:'',tags:['寺院','大单']},
+            {id:'zise_fangfa',name:'染色匠师',type:'teacher',x:0,y:-280,r:15,
+             desc:'擅长植物染色的匠师，你与他合作研究出了多种颜色的染纸配方。红纸、蓝纸、绿纸相继问世。',
+             quote:'染色之法，以草木为源。',source:'',tags:['技术','合作']}
+         ],
+         edges:[
+            {from:'player',to:'huangbo_shang',type:'business',strength:6},
+            {from:'player',to:'dasimiao',type:'patron',strength:8},
+            {from:'player',to:'zise_fangfa',type:'teacher',strength:5}
+         ],
+         toast:{title:'染色突破',content:'黄檗染纸，防虫古雅。寺院大藏经的订单来了。'}},
+        {phase:'官方订单',contextTime:'天监末年 · 官方订单',
+         contextPlace:'官府秘书省需要大量优质纸张抄写国史和典籍，你的银光纸被选为御用纸。这是荣耀，也是压力——若有差池便是重罪。',
+         nodes:[
+            {id:'mishusheng',name:'秘书省官员',type:'patron',x:-180,y:200,r:17,
+             desc:'朝廷秘书省的官员，负责采购抄写国史的用纸。你的银光纸入选御用，但要求每批都要检验。',
+             quote:'秘书省掌国史，用纸尤精。',source:'',tags:['官府','御用']},
+            {id:'jianyan',name:'纸张检验官',type:'patron',x:160,y:220,r:16,
+             desc:'专门检验纸张品质的官吏，拿着标准样纸来对比。稍有瑕疵便打回重做。',
+             quote:'官用之物，不可有分毫之差。',source:'',tags:['检验','压力']},
+            {id:'jingzheng_pm',name:'竞争纸坊',type:'enemy',x:0,y:300,r:16,
+             desc:'另一家纸坊的老板，也想拿下官方订单。他暗中拉关系，想把你的御用纸资格挤掉。',
+             quote:'利之所在，争者必多。',source:'',tags:['竞争','暗斗']}
+         ],
+         edges:[
+            {from:'player',to:'mishusheng',type:'patron',strength:8},
+            {from:'player',to:'jianyan',type:'patron',strength:4},
+            {from:'player',to:'jingzheng_pm',type:'enemy',strength:-5}
+         ],
+         toast:{title:'官方订单',content:'银光纸入选御用，秘书省大单在手。荣耀背后是重压。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景军入建康，大量典籍被毁，造纸作坊也遭殃。你带着压光工具和黄檗染纸的配方，与同行匠人一起逃难。',
+         nodes:[
+            {id:'luandui_pm',name:'乱兵焚纸',type:'enemy',x:0,y:300,r:18,
+             desc:'侯景军不懂纸张的价值，将作坊里的纸和工具付之一炬。你拼死抢救出了几块砑石和配方手稿。',
+             quote:'侯景之乱，台城藏书尽毁。',source:'《南史·侯景传》',tags:['战乱','文化劫难']},
+            {id:'bianshu',name:'逃难书生',type:'hometown',x:-200,y:180,r:16,
+             desc:'带着手抄经书逃难的书生，求你帮忙修补破损的纸页。你用残余的工具帮他修好了经书。',
+             quote:'书犹药也，善读之可以医愚。',source:'',tags:['文化','救助']},
+            {id:'chongjian_pm',name:'南逃重建',type:'hometown',x:200,y:200,r:16,
+             desc:'几个造纸同行商议南下，到会稽或江陵重建纸坊。只要有手艺在，哪里都能造纸。',
+             quote:'',source:'',tags:['同袍','重建']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_pm',type:'enemy',strength:-10},
+            {from:'player',to:'bianshu',type:'hometown',strength:5},
+            {from:'player',to:'chongjian_pm',type:'hometown',strength:7}
+         ],
+         toast:{title:'侯景之乱',content:'纸毁炉冷，但压光之技在手。乱世中，纸与笔的火种不灭。'}}
+    ]
+};
+
+// ==================== 6. 草市小贩 ====================
+ALL_DATA.grassmarket = {
+    contextDefault: {time:'天监年间 · 建康城郊', place:'村口路边，你支起一个小摊，卖些日常杂货。没有市籍、没有铺面，在这城郊草市里讨生活，一天能赚几十文钱就算不错了。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（草市小贩）',type:'player',x:0,y:0,r:26,
+         desc:'建康城郊草市的小贩，摆摊卖些日用品和杂货。没有市籍，没有铺面，日出而摆、日落而收，赚的都是辛苦钱。',
+         quote:'商贾之事，末业也。然民以食为天。',source:'《汉书·食货志》',tags:['小贩','生计']},
+        {id:'hehuoren',name:'合伙人',type:'business',x:-90,y:110,r:17,
+         desc:'和你一起摆摊的老伙计，一个负责进货，一个负责售卖。两人凑的本钱不多，但分工明确。',
+         quote:'合则两利，分则两伤。',source:'',tags:['合伙','生意']},
+        {id:'wife_gm',name:'妻子',type:'blood',x:-140,y:-90,r:18,
+         desc:'跟着你吃苦的妻子，白天帮你看守摊位，晚上缝补衣裳贴补家用。最大的心愿是能有个真正的铺面。',
+         quote:'贫贱夫妻百事哀。',source:'',tags:['家眷']},
+        {id:'nongmin',name:'供货农民',type:'hometown',x:100,y:100,r:16,
+         desc:'隔壁村的农民，种的菜和养的鸡鸭都卖给你转卖。他是你的主要货源，关系好坏直接影响生意。',
+         quote:'农不出则乏其食，工不出则乏其事。',source:'《史记·货殖列传》',tags:['同乡','供货']},
+        {id:'caoshiwei',name:'草市尉',type:'patron',x:130,y:-80,r:16,
+         desc:'管理草市的基层官吏，负责收税和维持秩序。态度不算太差，但每个月的税银一文不能少。',
+         quote:'市井之税，虽少不可废。',source:'',tags:['官民','税收']}
+    ],
+    initialEdges: [
+        {from:'player',to:'hehuoren',type:'business',strength:7},
+        {from:'player',to:'wife_gm',type:'blood',strength:9},
+        {from:'player',to:'nongmin',type:'hometown',strength:6},
+        {from:'player',to:'caoshiwei',type:'patron',strength:4}
+    ],
+    timeline: [
+        {phase:'摆摊开张',contextTime:'天监初年 · 摆摊开张',
+         contextPlace:'你和合伙人凑了几百文本钱，在草市支起了摊位。卖些油盐酱醋、针头线脑，生意勉强糊口。',
+         nodes:[
+            {id:'guke_gm',name:'常来主顾',type:'business',x:0,y:-210,r:15,
+             desc:'附近村庄的农妇，每隔几天就来买些针线布头。虽然每次只花几文钱，但贵在常来。',
+             quote:'',source:'',tags:['客户','常客']},
+            {id:'pangtan',name:'隔壁摊贩',type:'hometown',x:-180,y:-40,r:15,
+             desc:'卖豆腐的老张和卖柴火的王婆，都是草市的老摊贩了。互相照应，有时还互相换货。',
+             quote:'远亲不如近邻。',source:'',tags:['邻里','互助']},
+            {id:'yidao',name:'游方货郎',type:'business',x:200,y:-60,r:15,
+             desc:'挑着货担走村串户的游方货郎，偶尔路过草市。他走的地方多，消息也灵通。',
+             quote:'货郎担上，百货皆有。',source:'',tags:['行商','消息']}
+         ],
+         edges:[
+            {from:'player',to:'guke_gm',type:'business',strength:5},
+            {from:'player',to:'pangtan',type:'hometown',strength:5},
+            {from:'player',to:'yidao',type:'business',strength:4}
+         ],
+         toast:{title:'摆摊开张',content:'几文本钱，一方小摊。草市小贩的生计就此开始。'}},
+        {phase:'打入大市',contextTime:'天监中期 · 打入大市',
+         contextPlace:'草市生意渐有起色，你想打入建康城大市。但没有市籍不能入大市交易，需要找门路办市籍。',
+         nodes:[
+            {id:'dashi_paimai',name:'大市中间人',type:'business',x:220,y:130,r:16,
+             desc:'在建康大市做中间人的老油条，说可以帮你办市籍，但要一笔不菲的"手续费"。',
+             quote:'市籍者，入市之凭也。',source:'',tags:['门路','手续费']},
+            {id:'shiling_gm',name:'大市市令',type:'patron',x:-200,y:60,r:17,
+             desc:'管理建康大市的市令，发放市籍的权力在他手中。没有他的批准，你永远进不了大市。',
+             quote:'市令掌市之治，禁其奇邪。',source:'《通典·食货》',tags:['权力','关卡']},
+            {id:'lao_guke',name:'老主顾帮忙',type:'hometown',x:0,y:250,r:15,
+             desc:'草市的老主顾中有位退休的县吏，愿意帮你写一封引荐信。人情关系在关键时刻最有用。',
+             quote:'千里寄鹅毛，物轻情意重。',source:'',tags:['人情','帮助']}
+         ],
+         edges:[
+            {from:'player',to:'dashi_paimai',type:'business',strength:5},
+            {from:'player',to:'shiling_gm',type:'patron',strength:6},
+            {from:'player',to:'lao_guke',type:'hometown',strength:5}
+         ],
+         toast:{title:'打入大市',content:'没有市籍的困境，办市籍的艰难。小贩向上攀爬的第一步。'}},
+        {phase:'钱荒危机',contextTime:'天监末年 · 钱荒危机',
+         contextPlace:'市面上的铜钱忽然紧缺，买进卖出都成了问题。客户手里没钱，供货商要现银才肯发货。你夹在中间左右为难。',
+         nodes:[
+            {id:'qianhuang',name:'借贷铜钱的富户',type:'business',x:200,y:-180,r:16,
+             desc:'附近村子的富户，手里有余钱。愿意借给你铜钱周转，但要两成的利息。',
+             quote:'贫富相资，借贷相循。',source:'',tags:['借贷','高利']},
+            {id:'gonghuoshang',name:'催款供货商',type:'enemy',x:-200,y:-160,r:16,
+             desc:'之前赊账进货的供货商，钱荒时急着收账。你不还钱他就不供货，生意眼看要断。',
+             quote:'赊账易，讨债难。',source:'',tags:['催债','压力']},
+            {id:'huobi_dangpu',name:'当铺掌柜',type:'business',x:0,y:-280,r:15,
+             desc:'草市旁的当铺掌柜，你可以把家里值钱的东西当掉换铜钱。这是最后的办法了。',
+             quote:'当铺者，以物易钱之所也。',source:'',tags:['应急','典当']}
+         ],
+         edges:[
+            {from:'player',to:'qianhuang',type:'business',strength:4},
+            {from:'player',to:'gonghuoshang',type:'enemy',strength:-5},
+            {from:'player',to:'huobi_dangpu',type:'business',strength:3}
+         ],
+         toast:{title:'钱荒危机',content:'铜钱紧缺，买进卖出两难。小贩在钱荒中的挣扎。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景军来了，草市被洗劫一空。你的全部家当都在那个小摊上，一夜之间化为乌有。带着妻儿随难民南下。',
+         nodes:[
+            {id:'luandui_gm',name:'乱兵抢掠',type:'enemy',x:0,y:300,r:18,
+             desc:'侯景军路过草市，见什么抢什么。你的货物、本钱、甚至摊位上的遮布都被抢走了。',
+             quote:'侯景之乱，百姓流离。',source:'《南史·侯景传》',tags:['战乱','抢掠']},
+            {id:'nanmin_qun',name:'逃难百姓群',type:'hometown',x:-200,y:180,r:16,
+             desc:'草市的摊贩和附近的村民聚在一起逃难，路上互相搀扶。你的合伙人也在其中。',
+             quote:'',source:'',tags:['同袍','逃难']},
+            {id:'luoji_dao',name:'路边的废弃物资',type:'business',x:200,y:200,r:14,
+             desc:'逃难路上捡到些被丢弃的物资——几块布匹、一袋粗粮。乱世之中，这些都是救命的宝贝。',
+             quote:'',source:'',tags:['求生','拾荒']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_gm',type:'enemy',strength:-10},
+            {from:'player',to:'nanmin_qun',type:'hometown',strength:6},
+            {from:'player',to:'luoji_dao',type:'business',strength:3}
+         ],
+         toast:{title:'侯景之乱',content:'草市被毁，本钱全无。带着妻儿在乱世中求一条生路。'}}
+    ]
+};
+
+// ==================== 7. 大市坐贾 ====================
+ALL_DATA.shopkeeper = {
+    contextDefault: {time:'天监年间 · 建康大市', place:'建康城大市，你是布匹铺面的坐贾。一间门面、三间库房，专卖上等绢布。市令、行会、税吏三层官商关系，步步小心。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（大市布商）',type:'player',x:0,y:0,r:26,
+         desc:'建康城大市的坐贾，经营布匹铺面已有数年。一间门面、三间库房，专卖上等绢布。在市令、行会、税吏之间周旋谋生。',
+         quote:'坐贾者，列肆而卖。',source:'《汉书·食货志》',tags:['坐贾','经营']},
+        {id:'laozhao',name:'合伙人老赵',type:'business',x:-90,y:110,r:17,
+         desc:'你的老搭档，负责跑外进货。为人忠厚但有些木讷，不擅长跟官吏打交道。你负责铺面，他负责货源。',
+         quote:'合伙之道，各尽其能。',source:'',tags:['合伙','进货']},
+        {id:'wife_sk',name:'妻子（管账）',type:'blood',x:-140,y:-90,r:18,
+         desc:'精明能干的妻子，管着铺面的账目。每笔进出都记得清清楚楚，是你最信赖的人。',
+         quote:'内助之贤，胜于良相。',source:'',tags:['家眷','管账']},
+        {id:'gonghuoshang_sk',name:'供货商周掌柜',type:'business',x:100,y:100,r:17,
+         desc:'城外大布庄的周掌柜，你的主要供货商。他手上有最好的绢布货源，但最近价格涨得厉害。',
+         quote:'良贾深藏若虚。',source:'《史记·货殖列传》',tags:['供货','涨价']},
+        {id:'xiaoliu',name:'学徒小刘',type:'teacher',x:130,y:-80,r:15,
+         desc:'从乡下来的小伙子，在你铺面里当学徒。手脚勤快，脑子也活，你打算好好栽培他。',
+         quote:'教之以事而喻诸德。',source:'《礼记·文王世子》',tags:['师徒','培养']}
+    ],
+    initialEdges: [
+        {from:'player',to:'laozhao',type:'business',strength:7},
+        {from:'player',to:'wife_sk',type:'blood',strength:9},
+        {from:'player',to:'gonghuoshang_sk',type:'business',strength:6},
+        {from:'player',to:'xiaoliu',type:'teacher',strength:6}
+    ],
+    timeline: [
+        {phase:'日常经营',contextTime:'天监初年 · 日常经营',
+         contextPlace:'布铺日常运转，来来往往的客户、定期结账的供货商、例行检查的市吏。大市的规矩多，但生意还算稳当。',
+         nodes:[
+            {id:'shizu_guke',name:'士族采买',type:'business',x:0,y:-210,r:16,
+             desc:'王谢等高门大户的家仆来买布料，出手大方但赊账的多。赊给士族有面子，但钱不好要。',
+             quote:'王谢堂前，布帛为常。',source:'',tags:['士族','赊账']},
+            {id:'xiaofan',name:'散客小贩',type:'business',x:-180,y:-40,r:15,
+             desc:'从草市来进货的小贩，每次买的不多但数量稳定。是你和基层市场的联系纽带。',
+             quote:'大贾批发，小贩零售。',source:'',tags:['客户','批发']},
+            {id:'duidian',name:'对面布铺',type:'enemy',x:200,y:-60,r:16,
+             desc:'对面新开了一家布铺，价格比你低一成。你怀疑他的货源来路不正，但拿不出证据。',
+             quote:'同行是冤家。',source:'',tags:['竞争','价格战']}
+         ],
+         edges:[
+            {from:'player',to:'shizu_guke',type:'business',strength:6},
+            {from:'player',to:'xiaofan',type:'business',strength:5},
+            {from:'player',to:'duidian',type:'enemy',strength:-4}
+         ],
+         toast:{title:'日常经营',content:'士族赊账、散客批发、对面竞争——大市坐贾的日常。'}},
+        {phase:'行会博弈',contextTime:'天监中期 · 行会博弈',
+         contextPlace:'行会要统一涨价，你不想跟但不敢反对。行会会长暗示不遵守行规的商家会被"请出去"。',
+         nodes:[
+            {id:'hanghuizhang_sk',name:'行会会长',type:'patron',x:220,y:130,r:17,
+             desc:'建康大市商贾行会的会长，势力很大。他提出统一涨价三成，不听话的商家会被排挤出局。',
+             quote:'行规大于天，违者逐出市。',source:'',tags:['行会','权力']},
+            {id:'hanghui_tonghang',name:'同行商贾',type:'hometown',x:-200,y:60,r:16,
+             desc:'几个关系不错的同行商贾，私下抱怨行会涨价太过分，但没人敢公开反对。',
+             quote:'',source:'',tags:['同行','不满']},
+            {id:'xieshang',name:'供货商提价',type:'enemy',x:0,y:250,r:16,
+             desc:'周掌柜传来消息，上游蚕丝涨价，供货价要提高两成。行会又要统一涨价，两头挤压。',
+             quote:'上游涨价，下游承压。',source:'',tags:['涨价','困境']}
+         ],
+         edges:[
+            {from:'player',to:'hanghuizhang_sk',type:'patron',strength:5},
+            {from:'player',to:'hanghui_tonghang',type:'hometown',strength:5},
+            {from:'player',to:'xieshang',type:'enemy',strength:-5}
+         ],
+         toast:{title:'行会博弈',content:'行会强推涨价，供货商也来提价。坐贾夹在中间进退两难。'}},
+        {phase:'士族特权',contextTime:'天监后期 · 士族特权',
+         contextPlace:'士族凭借免税特权大量经商，你的客户被抢走不少。更可气的是，他们卖的布比你便宜——因为不交税。',
+         nodes:[
+            {id:'shizu_shang',name:'士族商人',type:'enemy',x:200,y:-180,r:17,
+             desc:'王谢子弟也开起了布铺，仗着免税特权低价倾销。你交的税他们不用交，价格自然比不过。',
+             quote:'士族免役免税，与民争利。',source:'',tags:['特权','不公']},
+            {id:'shuiji',name:'税吏',type:'patron',x:-200,y:-160,r:16,
+             desc:'市上的税吏，每月来收商税。看到士族不交税你却要交，他也无可奈何，只能按规矩办事。',
+             quote:'商税之法，自有定规。然特权之家不在此列。',source:'《通典·食货》',tags:['税收','无奈']},
+            {id:'supeiguan',name:'市令',type:'patron',x:0,y:-280,r:17,
+             desc:'管理大市的市令，表面公正但暗地里跟士族有来往。你去告状，他敷衍了事。',
+             quote:'市令掌市之治。',source:'《通典·食货》',tags:['权力','偏袒']}
+         ],
+         edges:[
+            {from:'player',to:'shizu_shang',type:'enemy',strength:-7},
+            {from:'player',to:'shuiji',type:'patron',strength:4},
+            {from:'player',to:'supeiguan',type:'patron',strength:3}
+         ],
+         toast:{title:'士族特权',content:'士族免税经商，平民商人无力竞争。制度之殇。'}},
+        {phase:'货币危机',contextTime:'天监末年 · 货币危机',
+         contextPlace:'市面上的铜钱严重不足，"短陌"现象越来越严重——本来一百文的钱只能当八十文用。你的库存和账目全乱了。',
+         nodes:[
+            {id:'qianzhuang',name:'钱庄老板',type:'business',x:-180,y:200,r:16,
+             desc:'大市旁边的钱庄老板，经营铜钱兑换。钱荒时他囤积居奇，兑换比价越来越离谱。',
+             quote:'短陌者，以短充长也。',source:'《宋书·颜竣传》',tags:['金融','短陌']},
+            {id:'duizhang',name:'对账先生',type:'business',x:160,y:220,r:15,
+             desc:'你请来的老账房先生，面对货币混乱也束手无策。只能建议你尽量以物易物。',
+             quote:'钱法乱则商贾困。',source:'',tags:['账目','混乱']},
+            {id:'yiwu_jiaoyi',name:'物物交换客户',type:'business',x:0,y:300,r:15,
+             desc:'钱荒时期，有客户提出用米粮换你的布匹。物物交换虽然麻烦，但好过没有生意。',
+             quote:'以物易物，古之市也。',source:'',tags:['物物交换','应急']}
+         ],
+         edges:[
+            {from:'player',to:'qianzhuang',type:'business',strength:4},
+            {from:'player',to:'duizhang',type:'business',strength:5},
+            {from:'player',to:'yiwu_jiaoyi',type:'business',strength:4}
+         ],
+         toast:{title:'货币危机',content:'铜钱短陌，百文当八十。商人的账本在钱荒中全乱了。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景军攻入建康，大市被焚毁。你的铺面、库房、存货全没了。合伙人老赵带着剩余的钱先走了，你在废墟中清点残存的家当。',
+         nodes:[
+            {id:'luandui_sk',name:'乱兵焚市',type:'enemy',x:0,y:300,r:18,
+             desc:'侯景军攻入建康后纵火焚烧大市，数百间铺面化为灰烬。你的心血全毁于一旦。',
+             quote:'侯景焚建康大市，烟火数日不绝。',source:'《南史·侯景传》',tags:['战乱','毁灭']},
+            {id:'laofan',name:'老客户报信',type:'hometown',x:-200,y:180,r:16,
+             desc:'多年的老客户冒着危险来给你报信，说乱兵正在逐街搜掠，劝你赶紧走。',
+             quote:'',source:'',tags:['人情','报信']},
+            {id:'nanxia_tonghang',name:'同行南逃',type:'hometown',x:200,y:200,r:16,
+             desc:'几个活下来的同行商贾凑在一起，带着仅存的本钱南逃。你决定加入他们，到南方重操旧业。',
+             quote:'',source:'',tags:['同袍','重建']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_sk',type:'enemy',strength:-10},
+            {from:'player',to:'laofan',type:'hometown',strength:6},
+            {from:'player',to:'nanxia_tonghang',type:'hometown',strength:7}
+         ],
+         toast:{title:'侯景之乱',content:'大市焚毁，铺面全无。但商人的韧劲不灭，南逃再起。'}}
+    ]
+};
+
+// ==================== 8. 行商/边贸商 ====================
+ALL_DATA.travelmerchant = {
+    contextDefault: {time:'天监年间 · 建康城', place:'你是往来于南北之间的行商，手持过所（通行证），冒着盗匪和关隘的风险贩运货物。高风险高回报，每一次出行都是一场赌博。', tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（行商）',type:'player',x:0,y:0,r:26,
+         desc:'往来南北的行商，手持过所通行各关隘。南方的丝绸、茶叶运往北方，北方的皮毛、药材贩回南方。每一次出行都是冒险。',
+         quote:'行商者，负货而行，利在四方。',source:'《史记·货殖列传》',tags:['行商','冒险']},
+        {id:'huwei',name:'护卫队长',type:'blood',x:-140,y:-90,r:17,
+         desc:'跟随你多年的护卫队长，从前是军中斥候，武艺高强。沿途盗匪全靠他挡着，你信他如信自己。',
+         quote:'行商之道，护卫为先。',source:'',tags:['亲信','护卫']},
+        {id:'fanyi',name:'翻译/向导',type:'hometown',x:130,y:-80,r:16,
+         desc:'在北方边境长大的汉人，精通鲜卑语。既当翻译又当向导，是南北贸易不可或缺的人物。',
+         quote:'南北通商，言语为先。',source:'',tags:['地缘','语言']},
+        {id:'guanzin_guanli',name:'关津官吏',type:'patron',x:-90,y:110,r:17,
+         desc:'守关的官吏，负责查验过所和收税。过所没问题就好说，但每回都要"孝敬"些才肯放行。',
+         quote:'关津之税，商旅必经。',source:'《通典·食货》',tags:['关卡','税费']},
+        {id:'beifang_dui',name:'北方商队',type:'business',x:100,y:100,r:17,
+         desc:'北方来的商队，带有皮毛、药材和马匹。他们在边境等你交换南方的丝茶，双方各取所需。',
+         quote:'南北互市，有无相通。',source:'',tags:['贸易','交换']}
+    ],
+    initialEdges: [
+        {from:'player',to:'huwei',type:'blood',strength:8},
+        {from:'player',to:'fanyi',type:'hometown',strength:7},
+        {from:'player',to:'guanzin_guanli',type:'patron',strength:5},
+        {from:'player',to:'beifang_dui',type:'business',strength:6}
+    ],
+    timeline: [
+        {phase:'获取过所',contextTime:'天监初年 · 获取过所',
+         contextPlace:'要出城做买卖，先要办过所（通行证）。过所不好办，需要铺保、需要官府审批，还得等上十天半个月。',
+         nodes:[
+            {id:'guanyuan_banli',name:'办过所的官员',type:'patron',x:0,y:-210,r:16,
+             desc:'主管发放过所的户曹官员，办事效率极低。暗示你若"意思意思"可以加快审批。',
+             quote:'过所者，通行之符也。',source:'《唐律疏议》',tags:['官僚','手续']},
+            {id:'pubao',name:'铺保（担保人）',type:'hometown',x:-180,y:-40,r:15,
+             desc:'建康城开铺面的老商人，愿意给你做担保办过所。因为你们是同乡，他信得过你。',
+             quote:'同乡之谊，可托生死。',source:'',tags:['同乡','担保']},
+            {id:'luotong',name:'落魄书吏',type:'business',x:200,y:-60,r:15,
+             desc:'官府里的小吏，私下帮你疏通过所审批。他日子过得紧巴，你给他些好处他乐意帮忙。',
+             quote:'吏虽微，其用大。',source:'',tags:['门路','疏通']}
+         ],
+         edges:[
+            {from:'player',to:'guanyuan_banli',type:'patron',strength:5},
+            {from:'player',to:'pubao',type:'hometown',strength:6},
+            {from:'player',to:'luotong',type:'business',strength:4}
+         ],
+         toast:{title:'获取过所',content:'过所到手，万里商路的第一步。但手续之繁，令人头疼。'}},
+        {phase:'北方贸易',contextTime:'天监中期 · 北方贸易',
+         contextPlace:'带着南方的丝绸和茶叶北上，在边境与北方商队交换皮毛和药材。路途遥远，盗匪出没，每一程都是生死考验。',
+         nodes:[
+            {id:'daofei',name:'山匪',type:'enemy',x:220,y:130,r:17,
+             desc:'盘踞在山路上的山匪，专劫商队。你的护卫队与他们有过几次正面交锋，互有伤亡。',
+             quote:'行商之途，盗匪如影。',source:'',tags:['盗匪','危险']},
+            {id:'keli',name:'北方客户',type:'business',x:-200,y:60,r:16,
+             desc:'北方城镇的大户，喜欢南方的丝绸和茶叶。每次见面都热情招待，生意也好谈。',
+             quote:'北人好南货，南人好北珍。',source:'',tags:['客户','北方']},
+            {id:'yidao_tong',name:'同行商队',type:'hometown',x:0,y:250,r:16,
+             desc:'路上遇到的另一支商队，决定结伴同行。人多安全，遇到盗匪也好互相照应。',
+             quote:'商旅同行，守望相助。',source:'',tags:['同行','互助']}
+         ],
+         edges:[
+            {from:'player',to:'daofei',type:'enemy',strength:-7},
+            {from:'player',to:'keli',type:'business',strength:6},
+            {from:'player',to:'yidao_tong',type:'hometown',strength:5}
+         ],
+         toast:{title:'北方贸易',content:'丝绸北去，皮毛南来。万里商路上的利润与危险。'}},
+        {phase:'海外商路',contextTime:'天监后期 · 海外商路',
+         contextPlace:'听说海上贸易利润更丰厚，你决定尝试把货物装上远洋商船。海外贸易风险更大，但一船货的利润抵得上十次陆路贸易。',
+         nodes:[
+            {id:'haiyun_chuanzhu',name:'远洋船主',type:'business',x:200,y:-180,r:17,
+             desc:'跑海外航线的船主，承诺把你的货运到广州再转海路。运费不低，但利润也诱人。',
+             quote:'南海舶来，珍奇万端。',source:'《宋书·夷蛮传》',tags:['海运','合作']},
+            {id:'haiwai_ke',name:'海外买家',type:'business',x:-200,y:-160,r:16,
+             desc:'通过中间人联系的海外买家，要买大量丝绸和瓷器。价格是国内的五倍，但要先付三成定金。',
+             quote:'海外之利，百倍于内。',source:'',tags:['海外','暴利']},
+            {id:'fenglang',name:'风险担保人',type:'patron',x:0,y:-280,r:16,
+             desc:'建康城的大商人，愿意为你的海外贸易做担保——当然要抽两成利润。万一船沉了，他赔你本钱。',
+             quote:'海商之道，利大险亦大。',source:'',tags:['担保','风险']}
+         ],
+         edges:[
+            {from:'player',to:'haiyun_chuanzhu',type:'business',strength:6},
+            {from:'player',to:'haiwai_ke',type:'business',strength:7},
+            {from:'player',to:'fenglang',type:'patron',strength:5}
+         ],
+         toast:{title:'海外商路',content:'一船货抵十次陆路。海外贸易的暴利与豪赌。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景之乱爆发，南北商路断绝，你的货物被困在北方。护卫队长战死，你只身带着账本逃回建康，却发现城也破了。',
+         nodes:[
+            {id:'luandui_tm',name:'乱兵劫货',type:'enemy',x:0,y:300,r:18,
+             desc:'南逃路上遇到侯景军的散兵游勇，货物被抢了大半。你拼死保住了账本和一小包金银。',
+             quote:'侯景之乱，商旅断绝。',source:'《南史·侯景传》',tags:['战乱','劫掠']},
+            {id:'huwei_zhansi',name:'护卫队牺牲',type:'blood',x:-200,y:180,r:16,
+             desc:'护卫队长为了掩护你撤退，与乱兵搏斗后壮烈牺牲。你发誓要照顾他的家人。',
+             quote:'士为知己者死。',source:'',tags:['牺牲','义气']},
+            {id:'taonan_shangren',name:'南逃商人',type:'hometown',x:200,y:200,r:16,
+             desc:'路上遇到的几个南逃商人，大家凑在一起赶路。乱世之中，商人们互相接济。',
+             quote:'患难见真情。',source:'',tags:['同袍','互助']}
+         ],
+         edges:[
+            {from:'player',to:'luandui_tm',type:'enemy',strength:-10},
+            {from:'player',to:'huwei_zhansi',type:'blood',strength:-8},
+            {from:'player',to:'taonan_shangren',type:'hometown',strength:6}
+         ],
+         toast:{title:'侯景之乱',content:'商路断绝，护卫牺牲，货物被劫。行商的万里路，在乱世中走到了尽头。'}}
+    ]
+};
+
+// ================================================================
+// =====================  力导向物理引擎  ========================
+// ================================================================
+
+var REPULSION = 8000;
+var ATTRACTION = 0.005;
+var DAMPING = 0.85;
+var CENTER_GRAVITY = 0.02;
+var IDEAL_LENGTH = 180;
+
+function physicsStep() {
+    var i, j, n1, n2, dx, dy, dist, force, fx, fy, e, target;
+    for (i = 0; i < nodes.length; i++) {
+        n1 = nodes[i];
+        if (n1 === dragNode) continue;
+        for (j = i + 1; j < nodes.length; j++) {
+            n2 = nodes[j];
+            dx = n2.x - n1.x;
+            dy = n2.y - n1.y;
+            dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 1) { dist = 1; dx = Math.random() - 0.5; dy = Math.random() - 0.5; }
+            force = REPULSION / (dist * dist);
+            fx = force * dx / dist;
+            fy = force * dy / dist;
+            n1.vx = (n1.vx || 0) - fx;
+            n1.vy = (n1.vy || 0) - fy;
+            n2.vx = (n2.vx || 0) + fx;
+            n2.vy = (n2.vy || 0) + fy;
+        }
+    }
+    for (i = 0; i < edges.length; i++) {
+        e = edges[i];
+        n1 = getNodeById(e.from);
+        n2 = getNodeById(e.to);
+        if (!n1 || !n2) continue;
+        dx = n2.x - n1.x;
+        dy = n2.y - n1.y;
+        dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) dist = 1;
+        var str = e.strength || 5;
+        var absStr = Math.abs(str);
+        force = ATTRACTION * absStr * (dist - IDEAL_LENGTH);
+        fx = force * dx / dist;
+        fy = force * dy / dist;
+        if (n1 !== dragNode) { n1.vx = (n1.vx || 0) + fx; n1.vy = (n1.vy || 0) + fy; }
+        if (n2 !== dragNode) { n2.vx = (n2.vx || 0) - fx; n2.vy = (n2.vy || 0) - fy; }
+    }
+    for (i = 0; i < nodes.length; i++) {
+        target = nodes[i];
+        if (target === dragNode) continue;
+        target.vx = (target.vx || 0) - CENTER_GRAVITY * target.x;
+        target.vy = (target.vy || 0) - CENTER_GRAVITY * target.y;
+        target.vx *= DAMPING;
+        target.vy *= DAMPING;
+        target.x += target.vx;
+        target.y += target.vy;
+    }
+}
+
+function stabilize() {
+    for (var i = 0; i < 200; i++) physicsStep();
+}
+
+// ================================================================
+// ========================  渲染引擎  =============================
+// ================================================================
+
+function getNodeById(id) {
+    for (var i = 0; i < nodes.length; i++) { if (nodes[i].id === id) return nodes[i]; }
+    return null;
+}
+
+function render() {
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cW, cH);
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(scale, scale);
+    var ox = cW / 2 / scale - panX / scale;
+    var oy = cH / 2 / scale - panY / scale;
+    ctx.translate(ox, oy);
+
+    // 绘制连线
+    for (var i = 0; i < edges.length; i++) {
+        var e = edges[i];
+        var sn = getNodeById(e.from);
+        var en = getNodeById(e.to);
+        if (!sn || !en) continue;
+        var color = REL_COLORS[e.type] || '#555';
+        ctx.beginPath();
+        ctx.moveTo(sn.x, sn.y);
+        ctx.lineTo(en.x, en.y);
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = (e.strength < 0) ? 0.4 : 0.3;
+        ctx.lineWidth = (e.strength < 0) ? 1 : 1.5;
+        if (e.strength < 0) ctx.setLineDash([4, 4]);
+        else ctx.setLineDash([]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+    ctx.globalAlpha = 1;
+
+    // 绘制节点
+    for (var i = 0; i < nodes.length; i++) {
+        var n = nodes[i];
+        var r = n.r || 16;
+        var isHovered = (n === hoveredNode);
+        var isSelected = (n === selectedNode);
+        var isPlayer = (n.type === 'player');
+
+        // 光晕
+        if (isPlayer || isHovered || isSelected) {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, r + 6, 0, Math.PI * 2);
+            ctx.fillStyle = isPlayer ? 'rgba(212,168,83,0.2)' : 'rgba(212,168,83,0.12)';
+            ctx.fill();
+        }
+
+        // 节点圆
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+        var grad = ctx.createRadialGradient(n.x - r * 0.3, n.y - r * 0.3, 0, n.x, n.y, r);
+        if (isPlayer) {
+            grad.addColorStop(0, '#f0d080');
+            grad.addColorStop(1, '#b8860b');
+        } else {
+            var baseColor = REL_COLORS[n.type] || '#888';
+            grad.addColorStop(0, baseColor);
+            grad.addColorStop(1, shadeColor(baseColor, -40));
+        }
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.strokeStyle = isPlayer ? '#d4a853' : (isHovered || isSelected ? '#fff' : 'rgba(255,255,255,0.15)');
+        ctx.lineWidth = isPlayer ? 2 : (isHovered || isSelected ? 1.5 : 0.5);
+        ctx.stroke();
+
+        // 文字
+        ctx.fillStyle = '#e8d5b7';
+        ctx.font = (isPlayer ? 'bold ' : '') + (r > 18 ? '11px' : '10px') + ' "Noto Serif SC", serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        var label = n.name;
+        if (label.length > 6) label = label.substring(0, 5) + '…';
+        ctx.fillText(label, n.x, n.y + r + 12);
+    }
+    ctx.restore();
+    ctx.restore();
+}
+
+function shadeColor(color, percent) {
+    var num = parseInt(color.replace('#',''), 16);
+    var r = Math.min(255, Math.max(0, (num >> 16) + percent));
+    var g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + percent));
+    var b = Math.min(255, Math.max(0, (num & 0x0000FF) + percent));
+    return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+}
+
+var animFrame;
+function animate() {
+    physicsStep();
+    render();
+    updateStats();
+    animFrame = requestAnimationFrame(animate);
+}
+
+function updateStats() {
+    document.getElementById('statNodes').textContent = nodes.length;
+    document.getElementById('statEdges').textContent = edges.length;
+    document.getElementById('statPhase').textContent = currentPhase + 1;
+}
+
+// ================================================================
+// ========================  交互代码  =============================
+// ================================================================
+
+function getNodeAt(mx, my) {
+    var wx = (mx - panX - cW / 2) / scale;
+    var wy = (my - panY - cH / 2) / scale;
+    for (var i = nodes.length - 1; i >= 0; i--) {
+        var n = nodes[i];
+        var dx = n.x - wx, dy = n.y - wy;
+        if (dx * dx + dy * dy < (n.r + 4) * (n.r + 4)) return n;
+    }
+    return null;
+}
+
+canvas.addEventListener('mousedown', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var my = e.clientY - rect.top;
+    var node = getNodeAt(mx, my);
+    if (node) {
+        isDragging = true;
+        dragNode = node;
+        dragNode.vx = 0; dragNode.vy = 0;
+        lastMX = e.clientX; lastMY = e.clientY;
+        canvas.style.cursor = 'grabbing';
+    } else {
+        selectedNode = null;
+        document.getElementById('nodeInfo').classList.remove('show');
+        document.getElementById('detailPanel').style.display = 'none';
+    }
+});
+
+canvas.addEventListener('mousemove', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var my = e.clientY - rect.top;
+    if (isDragging && dragNode) {
+        var dx = (e.clientX - lastMX) / scale;
+        var dy = (e.clientY - lastMY) / scale;
+        dragNode.x += dx;
+        dragNode.y += dy;
+        dragNode.vx = 0; dragNode.vy = 0;
+        lastMX = e.clientX; lastMY = e.clientY;
+    } else {
+        var node = getNodeAt(mx, my);
+        hoveredNode = node;
+        canvas.style.cursor = node ? 'pointer' : 'grab';
+    }
+});
+
+canvas.addEventListener('mouseup', function(e) {
+    if (isDragging && dragNode) {
+        var rect = canvas.getBoundingClientRect();
+        var mx = e.clientX - rect.left;
+        var my = e.clientY - rect.top;
+        var dist = Math.abs(e.clientX - lastMX) + Math.abs(e.clientY - lastMY);
+        if (dist < 5) {
+            showNodeInfo(dragNode);
+        }
+        isDragging = false;
+        dragNode = null;
+        canvas.style.cursor = 'grab';
+    }
+});
+
+canvas.addEventListener('mouseleave', function() {
+    isDragging = false;
+    dragNode = null;
+    hoveredNode = null;
+    canvas.style.cursor = 'grab';
+});
+
+canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var delta = e.deltaY > 0 ? 0.9 : 1.1;
+    var newScale = Math.max(0.2, Math.min(3, scale * delta));
+    var rect = canvas.getBoundingClientRect();
+    var mx = e.clientX - rect.left - cW / 2;
+    var my = e.clientY - rect.top - cH / 2;
+    panX = mx - (mx - panX) * (newScale / scale);
+    panY = my - (my - panY) * (newScale / scale);
+    scale = newScale;
+}, { passive: false });
+
+// ================================================================
+// =======================  信息展示  ==============================
+// ================================================================
+
+function showNodeInfo(node) {
+    selectedNode = node;
+    var infoDiv = document.getElementById('nodeInfo');
+    document.getElementById('infoName').textContent = node.name;
+    document.getElementById('infoDesc').textContent = node.desc || '';
+    var quoteDiv = document.getElementById('infoQuote');
+    if (node.quote) {
+        quoteDiv.textContent = '"' + node.quote + '"——' + (node.source || '');
+        quoteDiv.style.display = 'block';
+    } else {
+        quoteDiv.style.display = 'none';
+    }
+    var tagsDiv = document.getElementById('infoTags');
+    tagsDiv.innerHTML = '';
+    if (node.tags) {
+        for (var i = 0; i < node.tags.length; i++) {
+            var tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = node.tags[i];
+            tag.style.cssText = 'background:rgba(212,168,83,.15);color:#d4a853;border:1px solid rgba(212,168,83,.3);';
+            tagsDiv.appendChild(tag);
+        }
+    }
+    infoDiv.classList.add('show');
+
+    // 关系列表
+    var detailPanel = document.getElementById('detailPanel');
+    var list = document.getElementById('relationList');
+    list.innerHTML = '';
+    var related = getRelatedNodes(node.id);
+    if (related.length > 0) {
+        detailPanel.style.display = 'block';
+        detailPanel.querySelector('h3').textContent = node.name + ' 的关系';
+        for (var i = 0; i < related.length; i++) {
+            var rel = related[i];
+            var li = document.createElement('li');
+            li.innerHTML = '<span class="rel-name">' + rel.node.name + '</span><span class="rel-type rel-' + rel.edge.type + '">' + REL_LABELS[rel.edge.type] + '</span>';
+            list.appendChild(li);
+        }
+    } else {
+        detailPanel.style.display = 'none';
+    }
+}
+
+function getRelatedNodes(nodeId) {
+    var result = [];
+    for (var i = 0; i < edges.length; i++) {
+        var e = edges[i];
+        if (e.from === nodeId) {
+            var n = getNodeById(e.to);
+            if (n) result.push({ node: n, edge: e });
+        } else if (e.to === nodeId) {
+            var n = getNodeById(e.from);
+            if (n) result.push({ node: n, edge: e });
+        }
+    }
+    return result;
+}
+
+function showToast(title, content) {
+    var t = document.getElementById('toast');
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastContent').textContent = content;
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// ================================================================
+// =======================  UI 逻辑  ==============================
+// ================================================================
+
+function initIdentityButtons() {
+    var craftDiv = document.getElementById('craftButtons');
+    var merchantDiv = document.getElementById('merchantButtons');
+    craftDiv.innerHTML = '';
+    merchantDiv.innerHTML = '';
+    for (var i = 0; i < CRAFT_IDS.length; i++) {
+        var id = CRAFT_IDS[i];
+        var btn = document.createElement('button');
+        btn.className = 'identity-btn' + (id === currentId ? ' active' : '');
+        btn.id = 'btn_' + id;
+        btn.innerHTML = ID_LABELS[id] + '<span class="btn-sub">' + ID_SUBS[id] + '</span>';
+        btn.onclick = (function(vid) { return function() { switchIdentity(vid); }; })(id);
+        craftDiv.appendChild(btn);
+    }
+    for (var i = 0; i < MERCHANT_IDS.length; i++) {
+        var id = MERCHANT_IDS[i];
+        var btn = document.createElement('button');
+        btn.className = 'identity-btn' + (id === currentId ? ' active' : '');
+        btn.id = 'btn_' + id;
+        btn.innerHTML = ID_LABELS[id] + '<span class="btn-sub">' + ID_SUBS[id] + '</span>';
+        btn.onclick = (function(vid) { return function() { switchIdentity(vid); }; })(id);
+        merchantDiv.appendChild(btn);
+    }
+}
+
+function switchIdentity(id) {
+    currentId = id;
+    currentPhase = -1;
+    // 更新按钮状态
+    var allBtns = document.querySelectorAll('.identity-btn');
+    for (var i = 0; i < allBtns.length; i++) allBtns[i].classList.remove('active');
+    var activeBtn = document.getElementById('btn_' + id);
+    if (activeBtn) activeBtn.classList.add('active');
+    loadData(id);
+}
+
+function loadData(id) {
+    var data = ALL_DATA[id];
+    if (!data) return;
+    nodes = [];
+    edges = [];
+    for (var i = 0; i < data.initialNodes.length; i++) {
+        var n = data.initialNodes[i];
+        nodes.push({ id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, r: n.r, vx: 0, vy: 0, desc: n.desc, quote: n.quote, source: n.source, tags: n.tags });
+    }
+    for (var i = 0; i < data.initialEdges.length; i++) {
+        edges.push({ from: data.initialEdges[i].from, to: data.initialEdges[i].to, type: data.initialEdges[i].type, strength: data.initialEdges[i].strength });
+    }
+    currentPhase = -1;
+    document.getElementById('contextTime').textContent = data.contextDefault.time;
+    document.getElementById('contextPlace').textContent = data.contextDefault.place;
+    document.getElementById('contextTag').textContent = data.contextDefault.tag;
+    selectedNode = null;
+    hoveredNode = null;
+    document.getElementById('nodeInfo').classList.remove('show');
+    document.getElementById('detailPanel').style.display = 'none';
+    buildTimeline(data);
+    scale = 1; panX = 0; panY = 0;
+    stabilize();
+}
+
+function buildTimeline(data) {
+    var list = document.getElementById('timelineList');
+    list.innerHTML = '';
+    for (var i = 0; i < data.timeline.length; i++) {
+        var t = data.timeline[i];
+        var div = document.createElement('div');
+        div.className = 'timeline-event' + (i <= currentPhase ? ' active' : '');
+        var newCount = t.nodes ? t.nodes.length : 0;
+        div.innerHTML = '<div class="phase">第' + (i + 1) + '阶段：' + t.phase + '<span class="new-tag">+' + newCount + '人</span></div><div class="desc">' + t.contextPlace.substring(0, 40) + '…</div>';
+        div.onclick = (function(idx) { return function() { jumpToPhase(idx); }; })(i);
+        list.appendChild(div);
+    }
+}
+
+function jumpToPhase(targetPhase) {
+    var data = ALL_DATA[currentId];
+    if (!data) return;
+    if (targetPhase >= data.timeline.length) return;
+    // 重置到初始状态
+    nodes = [];
+    edges = [];
+    for (var i = 0; i < data.initialNodes.length; i++) {
+        var n = data.initialNodes[i];
+        nodes.push({ id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, r: n.r, vx: 0, vy: 0, desc: n.desc, quote: n.quote, source: n.source, tags: n.tags });
+    }
+    for (var i = 0; i < data.initialEdges.length; i++) {
+        edges.push({ from: data.initialEdges[i].from, to: data.initialEdges[i].to, type: data.initialEdges[i].type, strength: data.initialEdges[i].strength });
+    }
+    // 逐阶段添加
+    for (var p = 0; p <= targetPhase; p++) {
+        var t = data.timeline[p];
+        if (t.nodes) {
+            for (var j = 0; j < t.nodes.length; j++) {
+                var n = t.nodes[j];
+                nodes.push({ id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, r: n.r, vx: 0, vy: 0, desc: n.desc, quote: n.quote, source: n.source, tags: n.tags });
+            }
+        }
+        if (t.edges) {
+            for (var j = 0; j < t.edges.length; j++) {
+                edges.push({ from: t.edges[j].from, to: t.edges[j].to, type: t.edges[j].type, strength: t.edges[j].strength });
+            }
+        }
+    }
+    currentPhase = targetPhase;
+    var lastT = data.timeline[targetPhase];
+    document.getElementById('contextTime').textContent = lastT.contextTime;
+    document.getElementById('contextPlace').textContent = lastT.contextPlace;
+    document.getElementById('contextTag').textContent = lastT.phase;
+    buildTimeline(data);
+    selectedNode = null;
+    document.getElementById('nodeInfo').classList.remove('show');
+    document.getElementById('detailPanel').style.display = 'none';
+    scale = 1; panX = 0; panY = 0;
+    stabilize();
+}
+
+function advanceTimeline() {
+    var data = ALL_DATA[currentId];
+    if (!data) return;
+    var nextPhase = currentPhase + 1;
+    if (nextPhase >= data.timeline.length) {
+        showToast('已到最后阶段', '无法继续推进。');
+        return;
+    }
+    var t = data.timeline[nextPhase];
+    if (t.nodes) {
+        for (var j = 0; j < t.nodes.length; j++) {
+            var n = t.nodes[j];
+            nodes.push({ id: n.id, name: n.name, type: n.type, x: n.x, y: n.y, r: n.r, vx: 0, vy: 0, desc: n.desc, quote: n.quote, source: n.source, tags: n.tags });
+        }
+    }
+    if (t.edges) {
+        for (var j = 0; j < t.edges.length; j++) {
+            edges.push({ from: t.edges[j].from, to: t.edges[j].to, type: t.edges[j].type, strength: t.edges[j].strength });
+        }
+    }
+    currentPhase = nextPhase;
+    document.getElementById('contextTime').textContent = t.contextTime;
+    document.getElementById('contextPlace').textContent = t.contextPlace;
+    document.getElementById('contextTag').textContent = t.phase;
+    buildTimeline(data);
+    if (t.toast) showToast(t.toast.title, t.toast.content);
+    stabilize();
+}
+
+function resetNetwork() {
+    loadData(currentId);
+    showToast('已重置', '回到初始状态。');
+}
+
+// ================================================================
+// ========================  图例  ================================
+// ================================================================
+
+function initLegend() {
+    var legend = document.getElementById('legend');
+    var html = '<div class="legend-title">关系类型</div>';
+    for (var key in REL_COLORS) {
+        html += '<div class="legend-item"><div class="legend-dot" style="background:' + REL_COLORS[key] + '"></div>' + REL_LABELS[key] + '</div>';
+    }
+    legend.innerHTML = html;
+}
+
+// ================================================================
+// ========================  初始化  ==============================
+// ================================================================
+
+window.addEventListener('resize', function() {
+    resizeCanvas();
+});
+
+initIdentityButtons();
+initLegend();
+loadData(currentId);
+animate();
+</script>
+</body>
+</html>

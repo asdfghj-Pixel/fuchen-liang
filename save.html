@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>浮沉梁 · 存档管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="game-header">
+    <div class="game-title">存档管理</div>
+    <div class="game-nav">
+      <button onclick="goHome()" class="btn btn-outline">返回主页</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="content-wrapper" style="max-width: 800px;">
+      <header class="main-header" style="margin-bottom: 40px;">
+        <h1 class="title" style="font-size: 36px;">存档管理</h1>
+        <p class="subtitle">保存你的南朝浮生之旅</p>
+      </header>
+
+      <div class="game-card">
+        <div class="game-card-title">快速存档</div>
+        <div class="relation-network" style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button onclick="quickSave()" class="btn btn-primary">快速存档</button>
+          <button onclick="quickLoad()" class="btn btn-secondary">快速读档</button>
+        </div>
+      </div>
+
+      <div class="game-card" style="margin-top: 24px;">
+        <div class="game-card-title">存档列表</div>
+        <div id="save-list" class="save-list"></div>
+      </div>
+
+      <footer class="main-footer" style="margin-top: 40px;">
+        <p>南朝宋末至梁末 · 历史生活模拟器</p>
+      </footer>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSaveList();
+    });
+
+    function goHome() {
+      window.location.href = 'index.html';
+    }
+
+    function quickSave() {
+      const saveData = {
+        version: '2.0',
+        timestamp: Date.now(),
+        date: new Date().toLocaleString('zh-CN'),
+        state: JSON.parse(JSON.stringify(GameState)),
+        mode: GameState.currentMode || 'none',
+        identity: GameState.entertainment.identity || 'none',
+        year: GameState.entertainment.year || 'none'
+      };
+      localStorage.setItem('fuchenliang_quick_save', JSON.stringify(saveData));
+      alert('快速存档成功！');
+      renderSaveList();
+    }
+
+    function quickLoad() {
+      const data = localStorage.getItem('fuchenliang_quick_save');
+      if (!data) {
+        alert('没有快速存档！');
+        return;
+      }
+      const saveData = JSON.parse(data);
+      Object.assign(GameState, saveData.state);
+      alert('快速读档成功！');
+      if (saveData.mode === 'career') {
+        window.location.href = 'career.html';
+      } else if (saveData.mode === 'entertainment') {
+        window.location.href = 'entertainment.html';
+      }
+    }
+
+    function getSaveSlots() {
+      const slots = [];
+      for (let i = 1; i <= 8; i++) {
+        const key = `fuchenliang_save_slot_${i}`;
+        const data = localStorage.getItem(key);
+        if (data) {
+          try {
+            const saveData = JSON.parse(data);
+            slots.push({
+              slot: i,
+              ...saveData
+            });
+          } catch (e) {
+            slots.push({ slot: i, corrupted: true });
+          }
+        } else {
+          slots.push({ slot: i, empty: true });
+        }
+      }
+      return slots;
+    }
+
+    function renderSaveList() {
+      const container = document.getElementById('save-list');
+      container.innerHTML = '';
+
+      const slots = getSaveSlots();
+
+      for (const slot of slots) {
+        const slotEl = document.createElement('div');
+        slotEl.className = 'save-slot';
+        
+        if (slot.empty) {
+          slotEl.innerHTML = `
+            <div class="save-slot-empty">
+              <div class="save-slot-num">存档位 ${slot.slot}</div>
+              <div class="save-slot-empty-text">空</div>
+              <button onclick="saveToSlot(${slot.slot})" class="btn btn-primary btn-sm">保存到这里</button>
+            </div>
+          `;
+        } else if (slot.corrupted) {
+          slotEl.innerHTML = `
+            <div class="save-slot-corrupted">
+              <div class="save-slot-num">存档位 ${slot.slot}</div>
+              <div class="save-slot-corrupted-text">存档损坏</div>
+              <button onclick="deleteSlot(${slot.slot})" class="btn btn-danger btn-sm">删除</button>
+            </div>
+          `;
+        } else {
+          const modeName = slot.mode === 'career' ? '职场模式' : slot.mode === 'entertainment' ? '娱乐模式' : '未开始';
+          const identityName = slot.identity ? GameData.identities[slot.identity]?.name || slot.identity : '无身份';
+          
+          slotEl.innerHTML = `
+            <div class="save-slot-content">
+              <div class="save-slot-header">
+                <span class="save-slot-num">存档位 ${slot.slot}</span>
+                <span class="save-slot-mode">${modeName}</span>
+              </div>
+              <div class="save-slot-info">
+                <div class="save-slot-date">${slot.date}</div>
+                <div class="save-slot-detail">身份：${identityName} | 年份：${slot.year}</div>
+              </div>
+              <div class="save-slot-actions">
+                <button onclick="loadFromSlot(${slot.slot})" class="btn btn-primary btn-sm">读档</button>
+                <button onclick="saveToSlot(${slot.slot})" class="btn btn-secondary btn-sm">覆盖</button>
+                <button onclick="deleteSlot(${slot.slot})" class="btn btn-danger btn-sm">删除</button>
+              </div>
+            </div>
+          `;
+        }
+        
+        container.appendChild(slotEl);
+      }
+    }
+
+    function saveToSlot(slotNum) {
+      const saveData = {
+        version: '2.0',
+        timestamp: Date.now(),
+        date: new Date().toLocaleString('zh-CN'),
+        state: JSON.parse(JSON.stringify(GameState)),
+        mode: GameState.currentMode || 'none',
+        identity: GameState.entertainment.identity || 'none',
+        year: GameState.entertainment.year || 'none'
+      };
+      localStorage.setItem(`fuchenliang_save_slot_${slotNum}`, JSON.stringify(saveData));
+      alert(`保存到存档位 ${slotNum} 成功！`);
+      renderSaveList();
+    }
+
+    function loadFromSlot(slotNum) {
+      const data = localStorage.getItem(`fuchenliang_save_slot_${slotNum}`);
+      if (!data) {
+        alert('存档不存在！');
+        return;
+      }
+      const saveData = JSON.parse(data);
+      Object.assign(GameState, saveData.state);
+      alert(`从存档位 ${slotNum} 读档成功！`);
+      if (saveData.mode === 'career') {
+        window.location.href = 'career.html';
+      } else if (saveData.mode === 'entertainment') {
+        window.location.href = 'entertainment.html';
+      }
+    }
+
+    function deleteSlot(slotNum) {
+      if (!confirm(`确定要删除存档位 ${slotNum} 吗？`)) return;
+      localStorage.removeItem(`fuchenliang_save_slot_${slotNum}`);
+      alert(`存档位 ${slotNum} 已删除！`);
+      renderSaveList();
+    }
+  </script>
+
+  <style>
+    .save-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .save-slot {
+      background: rgba(45, 31, 20, 0.6);
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .save-slot-empty, .save-slot-corrupted {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .save-slot-num {
+      font-size: 0.9rem;
+      color: #d4a574;
+      font-weight: bold;
+    }
+
+    .save-slot-empty-text {
+      color: #7f8c8d;
+      margin: 8px 0;
+    }
+
+    .save-slot-corrupted-text {
+      color: #e74c3c;
+      margin: 8px 0;
+    }
+
+    .save-slot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .save-slot-mode {
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      background: rgba(212, 165, 116, 0.2);
+      border-radius: 4px;
+      color: #d4a574;
+    }
+
+    .save-slot-info {
+      font-size: 0.85rem;
+      color: #a67c52;
+      margin-bottom: 12px;
+    }
+
+    .save-slot-date {
+      margin-bottom: 4px;
+    }
+
+    .save-slot-detail {
+      font-size: 0.75rem;
+      color: #8b5a2b;
+    }
+
+    .save-slot-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-sm {
+      font-size: 0.75rem;
+      padding: 6px 12px;
+    }
+
+    .btn-danger {
+      background: #c0392b;
+      border-color: #a93226;
+    }
+
+    .btn-danger:hover {
+      background: #a93226;
+    }
+
+    @media (max-width: 600px) {
+      .save-list {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</body>
+</html>

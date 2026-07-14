@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>南朝浮生录 - 社会关系网络 · 生活娱乐模式</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Noto Serif SC","SimSun",serif;background:#1a0f0a;color:#e8d5b7;overflow:auto;height:auto}
+.container{display:flex;height:100vh}
+.sidebar{width:320px;background:#2d1810;border-right:2px solid #5c3317;padding:0;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-header{padding:20px;border-bottom:1px solid #5c3317;background:rgba(139,69,19,.1)}
+.sidebar-header h1{color:#d4a853;font-size:1.1em;letter-spacing:2px}
+.sidebar-header .subtitle{color:#8b6914;font-size:.8em;margin-top:4px}
+/* 身份选择面板 */
+.identity-panel{padding:12px 16px;border-bottom:1px solid #5c3317;background:rgba(139,69,19,.08)}
+.identity-label{font-size:.75em;color:#b8956a;margin-bottom:8px;letter-spacing:1px}
+.identity-buttons{display:flex;flex-wrap:wrap;gap:6px}
+.identity-btn{flex:1 1 calc(50% - 3px);min-width:120px;padding:8px 6px;border:1px solid #5c3317;background:rgba(26,15,10,.6);color:#e8d5b7;font-family:inherit;font-size:.78em;cursor:pointer;border-radius:6px;transition:all .2s;text-align:center;line-height:1.4}
+.identity-btn:hover{background:rgba(139,69,19,.3);border-color:#8b4513}
+.identity-btn.active{border-color:#d4a853;background:rgba(212,168,83,.12)}
+.identity-btn .id-name{display:block;font-weight:bold;color:#e8d5b7;margin-bottom:3px}
+.identity-btn .id-rank{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.68em}
+.rank-free{background:rgba(60,180,120,.2);color:#69f0ae;border:1px solid #3cb478}
+.rank-half{background:rgba(220,180,60,.2);color:#ffd54f;border:1px solid #dcb43c}
+.rank-unfree{background:rgba(180,60,60,.2);color:#ff8a80;border:1px solid #b43c3c}
+.rank-official{background:rgba(80,130,220,.2);color:#82b1ff;border:1px solid #5082dc}
+/* 情境面板 */
+.context-panel{padding:15px 20px;border-bottom:1px solid #5c3317}
+.context-label{font-size:.8em;color:#b8956a;margin-bottom:8px;letter-spacing:1px}
+.context-info{padding:12px 14px;border:1px solid #5c3317;background:rgba(139,69,19,.15);border-radius:6px}
+.context-time{color:#d4a853;font-size:1em;font-weight:bold;margin-bottom:4px}
+.context-place{color:#b8956a;font-size:.82em;line-height:1.6}
+.context-phase-tag{display:inline-block;padding:2px 8px;background:rgba(212,168,83,.15);color:#d4a853;border:1px solid #d4a853;border-radius:4px;font-size:.72em;margin-top:6px}
+.timeline-panel{flex:1;overflow-y:auto;padding:15px 20px}
+.timeline-title{font-size:.85em;color:#d4a853;margin-bottom:12px;letter-spacing:1px}
+.timeline-event{padding:10px 12px;margin-bottom:8px;background:rgba(26,15,10,.5);border:1px solid #3d1f0f;border-radius:8px;cursor:pointer;transition:all .2s;font-size:.82em}
+.timeline-event:hover{border-color:#8b4513;background:rgba(139,69,19,.1)}
+.timeline-event.active{border-color:#d4a853;background:rgba(212,168,83,.08)}
+.timeline-event .phase{color:#d4a853;font-weight:bold;font-size:.85em}
+.timeline-event .desc{color:#b8956a;margin-top:3px;font-size:.78em}
+.timeline-event .new-tag{display:inline-block;padding:1px 6px;background:rgba(60,180,120,.2);color:#69f0ae;border:1px solid #3cb478;border-radius:4px;font-size:.7em;margin-left:6px}
+.detail-panel{padding:15px 20px;border-top:1px solid #5c3317;max-height:280px;overflow-y:auto}
+.detail-panel h3{color:#d4a853;font-size:.9em;margin-bottom:10px}
+.relation-list{list-style:none}
+.relation-list li{padding:6px 0;border-bottom:1px dashed #3d1f0f;font-size:.8em;display:flex;justify-content:space-between;align-items:center}
+.relation-list li:last-child{border-bottom:none}
+.relation-list .rel-name{color:#e8d5b7}
+.relation-list .rel-type{font-size:.7em;padding:1px 6px;border-radius:4px}
+.rel-blood{background:rgba(220,80,60,.2);color:#ff8a80;border:1px solid #dc5040}
+.rel-teacher{background:rgba(80,130,220,.2);color:#82b1ff;border:1px solid #5082dc}
+.rel-business{background:rgba(60,180,120,.2);color:#69f0ae;border:1px solid #3cb478}
+.rel-hometown{background:rgba(220,180,60,.2);color:#ffd54f;border:1px solid #dcb43c}
+.rel-patron{background:rgba(160,80,180,.2);color:#ea80fc;border:1px solid #a050b4}
+.rel-enemy{background:rgba(180,60,60,.2);color:#ff8a80;border:1px solid #b43c3c}
+.canvas-area{flex:1;position:relative;background:#1a0f0a}
+#networkCanvas{display:block;width:100%;height:100%;cursor:grab}
+#networkCanvas:active{cursor:grabbing}
+.controls{position:absolute;top:15px;right:15px;display:flex;gap:8px;z-index:10}
+.control-btn{padding:8px 14px;border:1px solid #5c3317;background:rgba(26,15,10,.9);color:#d4a853;font-family:inherit;font-size:.8em;cursor:pointer;border-radius:6px;transition:all .2s}
+.control-btn:hover{background:rgba(139,69,19,.4);border-color:#8b4513}
+.node-info{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(26,15,10,.95);border:1px solid #5c3317;border-radius:12px;padding:16px 20px;z-index:10;max-width:500px;display:none;backdrop-filter:blur(10px)}
+.node-info.show{display:block;animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.node-info h3{color:#d4a853;font-size:1em;margin-bottom:8px}
+.node-info p{font-size:.82em;line-height:1.7;color:#e8d5b7}
+.node-info .tag-row{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.node-info .tag{padding:3px 10px;border-radius:12px;font-size:.72em}
+.node-info .quote{font-style:italic;color:#d4a853;border-left:3px solid #8b4513;padding-left:10px;margin:10px 0;font-size:.8em}
+.legend{position:absolute;top:60px;right:15px;background:rgba(26,15,10,.95);border:1px solid #5c3317;border-radius:8px;padding:12px 14px;z-index:10}
+.legend-title{font-size:.75em;color:#d4a853;margin-bottom:6px;letter-spacing:1px}
+.legend-item{display:flex;align-items:center;margin:4px 0;font-size:.72em;color:#b8956a}
+.legend-dot{width:10px;height:10px;border-radius:50%;margin-right:7px}
+.stats-bar{position:absolute;top:15px;left:20px;display:flex;gap:12px;z-index:10}
+.stat-item{padding:8px 14px;background:rgba(26,15,10,.9);border:1px solid #5c3317;border-radius:8px;text-align:center}
+.stat-item .num{color:#d4a853;font-size:1.2em;font-weight:bold}
+.stat-item .label{font-size:.7em;color:#8b6914;margin-top:2px}
+.toast{position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(139,69,19,.95);border:1px solid #d4a853;padding:12px 24px;border-radius:8px;z-index:20;opacity:0;transition:opacity .5s;pointer-events:none;text-align:center}
+.toast.show{opacity:1}
+.toast h4{color:#d4a853;font-size:.9em;margin-bottom:4px}
+.toast p{font-size:.82em;color:#e8d5b7}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="sidebar">
+<div class="sidebar-header">
+<h1>社会关系网络 · 生活娱乐模式</h1>
+<div class="subtitle" id="sidebarSubtitle">以建康城郊农民视角展开</div>
+</div>
+<div class="identity-panel">
+<div class="identity-label">选择身份</div>
+<div class="identity-buttons" id="identityButtons"></div>
+</div>
+<div class="context-panel">
+<div class="context-label">当前情境</div>
+<div class="context-info">
+<div class="context-time" id="contextTime">天监三年 · 春耕前</div>
+<div class="context-place" id="contextPlace">秣陵县东郊，你家三十亩薄田旁。冬麦已种，春耕将至，日子虽清贫但安稳。</div>
+<div class="context-phase-tag" id="contextTag">初始</div>
+</div>
+</div>
+<div class="timeline-panel">
+<div class="timeline-title">时间线推进</div>
+<div id="timelineList"></div>
+</div>
+<div class="detail-panel" id="detailPanel" style="display:none">
+<h3>人物关系</h3>
+<ul class="relation-list" id="relationList"></ul>
+</div>
+</div>
+<div class="canvas-area" id="canvasArea">
+<div class="stats-bar">
+<div class="stat-item"><div class="num" id="statNodes">0</div><div class="label">关系节点</div></div>
+<div class="stat-item"><div class="num" id="statEdges">0</div><div class="label">关系连接</div></div>
+<div class="stat-item"><div class="num" id="statPhase">0</div><div class="label">已推进阶段</div></div>
+</div>
+<div class="controls">
+<button class="control-btn" onclick="resetNetwork()">重置</button>
+<button class="control-btn" onclick="advanceTimeline()" style="background:linear-gradient(135deg,#8b4513,#a0522d);color:#fff;border:none">推进时间线</button>
+</div>
+<canvas id="networkCanvas"></canvas>
+<div class="legend" id="legend"></div>
+<div class="node-info" id="nodeInfo">
+<h3 id="infoName"></h3>
+<p id="infoDesc"></p>
+<div class="quote" id="infoQuote"></div>
+<div class="tag-row" id="infoTags"></div>
+</div>
+<div class="toast" id="toast">
+<h4 id="toastTitle">新关系建立</h4>
+<p id="toastContent">内容</p>
+</div>
+</div>
+</div>
+
+<script>
+// ========== Canvas初始化 ==========
+var canvas = document.getElementById('networkCanvas');
+var ctx = canvas.getContext('2d');
+var cW = 0, cH = 0, dpr = window.devicePixelRatio || 1;
+function resizeCanvas() {
+    var area = document.getElementById('canvasArea');
+    cW = area.clientWidth || (window.innerWidth - 320);
+    cH = area.clientHeight || window.innerHeight;
+    if (cW < 200) cW = window.innerWidth - 320;
+    if (cH < 200) cH = window.innerHeight;
+    canvas.width = cW * dpr; canvas.height = cH * dpr;
+    canvas.style.width = cW + 'px'; canvas.style.height = cH + 'px';
+}
+resizeCanvas();
+
+// ========== 全局状态 ==========
+var currentPhase = -1;
+var currentIdentity = 'zigenong';
+var nodes = [], edges = [];
+var hoveredNode = null, selectedNode = null;
+var isDragging = false, dragNode = null, lastMX = 0, lastMY = 0;
+var scale = 1, panX = 0, panY = 0;
+
+// ========== 关系类型颜色 ==========
+var REL_COLORS = {
+    blood: '#dc5040', teacher: '#5082dc', business: '#3cb478',
+    hometown: '#dcb43c', patron: '#a050b4', enemy: '#b43c3c'
+};
+var REL_LABELS = {
+    blood: '血缘', teacher: '师徒', business: '商业',
+    hometown: '邻里', patron: '官民', enemy: '冲突'
+};
+
+// ========== 五种农村身份数据 ==========
+var ALL_DATA = {
+
+// ===== 1. 自耕农（自由民）=====
+zigenong: {
+    identityName: '自耕农',
+    rankLabel: '自由民',
+    rankClass: 'rank-free',
+    subtitle: '以建康城郊自耕农视角展开',
+    contextDefault: {time:'天监三年 · 春耕前',place:'秣陵县东郊，你家三十亩薄田旁。冬麦已种，春耕将至，日子虽清贫但安稳。',tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（自耕农）',type:'player',x:0,y:0,r:26,
+         desc:'建康城东郊秣陵县农户，世代耕种自家三十亩薄田。妻子持家，老母在堂。春耕夏耘，秋收冬藏，日子虽清贫但安稳。最大的愿望是风调雨顺、官府不扰。',
+         quote:'力田为生之本。',source:'《汉书·食货志》',thought:'知足与忧患并存'},
+        {id:'wife',name:'妻子阿蕙',type:'blood',x:-140,y:-90,r:18,
+         desc:'隔壁村的姑娘，嫁过来已有八年。勤劳能干，操持家务、养鸡养猪、纺织缝补样样在行。最大的操心是孩子的婚事和来年的口粮。',
+         quote:'男务耕桑，女勤织纴。',source:'《颜氏家训·治家》'},
+        {id:'mother',name:'老母亲',type:'blood',x:130,y:-80,r:16,
+         desc:'年过六旬，身体尚健。年轻时是村里有名的能手，如今帮着照看孙子、晒谷碾米。时常念叨"现在的赋税比从前重了"。',
+         quote:'八十者，人不馈。',source:'《礼记》'},
+        {id:'old_zhang',name:'邻人老张',type:'hometown',x:-90,y:110,r:16,
+         desc:'种了五十亩地的老农，村里公认的好把式。两家田地相邻，常年互相帮工。你家的牛就是找他借的。',
+         quote:'邻里相助，乡党相周。',source:'《颜氏家训·风操》'},
+        {id:'lizheng',name:'里正王叔',type:'patron',x:100,y:100,r:18,
+         desc:'村里的小吏，负责催缴赋税、传递官府文书。为人圆滑，跟镇上的官吏有些来往。你每年要给他送些礼物以求照应。',
+         quote:'里正者，乡官也。',source:'《汉书·百官公卿表》'}
+    ],
+    initialEdges: [
+        {from:'player',to:'wife',type:'blood',strength:10},
+        {from:'player',to:'mother',type:'blood',strength:10},
+        {from:'player',to:'old_zhang',type:'hometown',strength:7},
+        {from:'player',to:'lizheng',type:'patron',strength:5}
+    ],
+    timeline: [
+        {phase:'春耕时节',contextTime:'天监三年 · 春耕时节',
+         contextPlace:'官府来清丈田亩，粮商开始算计今年的收购价。田间地头多了些生面孔，日子不似从前安宁。',
+         nodes:[
+            {id:'agui',name:'佃户阿贵',type:'hometown',x:-180,y:-40,r:14,
+             desc:'你家田旁边的佃户，租了地主的二十亩地耕种。为人老实但运气不好，去年歉收欠了租，正愁今年的种子。你借了他两斗谷种。',
+             quote:'贫无借贷，富无施惠。',source:'《南齐书》'},
+            {id:'liangshang',name:'粮商陈老板',type:'business',x:0,y:-210,r:16,
+             desc:'秣陵镇上的粮商，每年秋收时来村里收谷。价格时好时坏，跟他打好交道能多卖几十文。不过他为人精明，不好糊弄。',
+             quote:'谷贱伤农，谷贵伤民。',source:'《汉书·食货志》'},
+            {id:'xiaoli',name:'县衙小吏',type:'patron',x:200,y:-60,r:16,
+             desc:'秣陵县衙的书吏，负责造册登记农户田亩。今年朝廷要清丈田亩，他来村里挨家挨户丈量。暗示你"适当孝敬"可以少报几亩。',
+             quote:'巧者劳而智者忧。',source:'《庄子》'}
+         ],
+         edges:[
+            {from:'player',to:'agui',type:'hometown',strength:5},
+            {from:'player',to:'liangshang',type:'business',strength:4},
+            {from:'old_zhang',to:'agui',type:'hometown',strength:3},
+            {from:'lizheng',to:'xiaoli',type:'patron',strength:4}
+         ],
+         toast:{title:'春耕时节',content:'春耕时节，官府来清丈田亩，粮商开始算计今年的收购价。'}},
+        {phase:'青黄不接',contextTime:'天监三年 · 青黄不接',
+         contextPlace:'去年收成勉强糊口，借的种子钱还没还清。田里的庄稼还青着，肚子却已经空了。村口来了逃荒的人。',
+         nodes:[
+            {id:'siseng',name:'放贷的寺僧',type:'business',x:200,y:130,r:16,
+             desc:'同泰寺的僧人，在镇上放贷取息。你去年借了他的种子钱，利息三分，到秋收要还。他虽是出家人，但算账比粮商还精。',
+             quote:'南朝寺院，广占田业。',source:'《南史》'},
+            {id:'liumin',name:'逃荒来的流民',type:'hometown',x:-200,y:60,r:14,
+             desc:'从江北逃难来的农户，听说北边打仗了。带着一家老小在村口搭了窝棚。你想收留他帮工，又怕里正来查户口。',
+             quote:'白骨露于野，千里无鸡鸣。',source:'曹操《蒿里行》'},
+            {id:'son',name:'儿子（十五岁）',type:'blood',x:0,y:220,r:16,
+             desc:'你的独子，十五岁了，身体壮实但不太爱读书。你愁着是该让他继续种地，还是想办法让他学门手艺。他偷偷跟镇上的铁匠学打铁。',
+             quote:'父之爱子，教之以义方。',source:'《颜氏家训·教子》'}
+         ],
+         edges:[
+            {from:'player',to:'siseng',type:'business',strength:-4},
+            {from:'player',to:'liumin',type:'hometown',strength:3},
+            {from:'player',to:'son',type:'blood',strength:9},
+            {from:'old_zhang',to:'siseng',type:'business',strength:2}
+         ],
+         toast:{title:'青黄不接',content:'青黄不接，借的寺僧种子钱还没还，又来了逃荒的流民。'}},
+        {phase:'秋收时节',contextTime:'天监三年 · 秋收时节',
+         contextPlace:'秋收了，但催租的管事比粮商来得还早。朝廷又征了壮丁修路运粮。丰收的喜悦里夹杂着忧愁。',
+         nodes:[
+            {id:'guanji',name:'催租地主管事',type:'enemy',x:-220,y:-120,r:17,
+             desc:'城里地主的管事，来村里催收佃户阿贵的租子。阿贵交不上，管事要把他赶走。你来劝，管事冷笑："你自己都欠着税，还操心别人？"',
+             quote:'富者田连阡陌，贫者无立锥之地。',source:'《汉书·食货志》'},
+            {id:'junguan',name:'巡查的军官',type:'patron',x:220,y:-120,r:18,
+             desc:'朝廷派来巡查的军官，据说是为征讨北方做准备。在村里征调壮丁修路、运粮。你的儿子被征走了，给了两匹绢布作为补偿。',
+             quote:'兵者，不祥之器。',source:'《老子》'},
+            {id:'tieshi',name:'镇上铁匠刘师傅',type:'business',x:0,y:-280,r:16,
+             desc:'你儿子偷偷学艺的铁匠，听说手艺不错。你想让他正式拜师，刘师傅愿意收但条件是"学费五石稻谷"。',
+             quote:'积财千万，不如薄技在身。',source:'《颜氏家训·勉学》'}
+         ],
+         edges:[
+            {from:'player',to:'guanji',type:'enemy',strength:-5},
+            {from:'player',to:'junguan',type:'patron',strength:3},
+            {from:'player',to:'tieshi',type:'business',strength:5},
+            {from:'son',to:'tieshi',type:'business',strength:6}
+         ],
+         toast:{title:'秋收时节',content:'秋收了，但催租的管事比粮商来得还早。朝廷又征了壮丁。'}},
+        {phase:'年末岁寒',contextTime:'天监三年 · 年末岁寒',
+         contextPlace:'入冬后寒气逼人，老母病倒在床。儿子从征役中归来，人瘦了一圈。新县令减免赋税，日子似乎有了盼头。',
+         nodes:[
+            {id:'xianling',name:'县令（新任）',type:'patron',x:0,y:260,r:20,
+             desc:'新上任的秣陵县令，据说是个清官。他上任后第一件事就是减免赋税，你第一次觉得官府做了件好事。但他能待多久？',
+             quote:'为政以德，譬如北辰。',source:'《论语·为政》'},
+            {id:'sick_mother',name:'病倒的老母',type:'blood',x:-200,y:220,r:16,
+             desc:'入冬后老母病倒了，请了镇上的郎中看过，说是年老体虚、寒气入体，需要药材调理。药钱要两贯，几乎是你们半年的积蓄。',
+             quote:'父母在，不远游。',source:'《论语·里仁》'},
+            {id:'return_son',name:'归来的儿子',type:'blood',x:200,y:220,r:16,
+             desc:'被征去修路运粮三个月，终于回来了。人瘦了一圈，但带回了三匹绢布和一些银钱。他说路上看到了北边来的逃难者，"比我们惨多了"。',
+             quote:'死生契阔，与子成说。',source:'《诗经》'}
+         ],
+         edges:[
+            {from:'player',to:'xianling',type:'patron',strength:4},
+            {from:'player',to:'sick_mother',type:'blood',strength:10},
+            {from:'player',to:'return_son',type:'blood',strength:9},
+            {from:'tieshi',to:'return_son',type:'business',strength:3}
+         ],
+         toast:{title:'年末岁寒',content:'年末岁寒，老母病倒，儿子归来。新县令免了赋税，你第一次觉得日子有了盼头。'}}
+    ]
+},
+
+// ===== 2. 佃户（半自由/依附民）=====
+dianhu: {
+    identityName: '佃户',
+    rankLabel: '半自由',
+    rankClass: 'rank-half',
+    subtitle: '以租种地主田地的佃户视角展开',
+    contextDefault: {time:'天监三年 · 春耕前',place:'秣陵县南乡，你租种谢老爷的二十亩水田，五成地租，春耕在即。',tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（佃户）',type:'player',x:0,y:0,r:26,
+         desc:'秣陵县南乡佃户，全家靠租种谢家的二十亩水田过活。五成地租，年成好时勉强糊口，年成差就得借粮。最大的心愿是攒够钱赎回一块自己的田。',
+         quote:'佃客者，依豪强以自存。',source:'《通典·食货》',thought:'依附与挣扎之间'},
+        {id:'xie_laoye',name:'地主谢老爷',type:'patron',x:0,y:-160,r:22,
+         desc:'秣陵县有名的乡绅，名下田产数百亩。祖上做过郡守，如今虽无官职，但在地方上颇有势力。对你不算太苛，但也谈不上仁慈——地租一分不少。',
+         quote:'势家田多而役寡。',source:'《南齐书·州郡志》'},
+        {id:'wife',name:'妻子',type:'blood',x:-150,y:60,r:16,
+         desc:'嫁过来六年，性格温顺但内心刚强。嫁妆只有一匹布。她每日天不亮就起来做饭、喂鸡、下田，夜里还要纺纱。总是说："再熬几年就好了。"',
+         quote:'妻以夫为天。',source:'《礼记》'},
+        {id:'guanjia',name:'地主管家周秃子',type:'enemy',x:160,y:80,r:17,
+         desc:'谢老爷家的管家，专管收租和催债。为人刻薄，收租时斗要多舀一勺，称要翘高一头。佃户们都恨他但又不敢得罪。你欠的租子就是他来催的。',
+         quote:'豪仆欺主客，侵渔佃户。',source:'《宋书》'},
+        {id:'aniu',name:'同村佃户阿牛',type:'hometown',x:-120,y:-110,r:15,
+         desc:'跟你一样租种谢家的田，不过他租的是旱地。力气大但脑子不太灵光，去年被管家多收了两斗租还浑然不觉。你们常在一起干活、喝酒。',
+         quote:'同病相怜，同忧相救。',source:'《颜氏家训》'}
+    ],
+    initialEdges: [
+        {from:'player',to:'xie_laoye',type:'patron',strength:6},
+        {from:'player',to:'wife',type:'blood',strength:10},
+        {from:'player',to:'guanjia',type:'enemy',strength:-4},
+        {from:'player',to:'aniu',type:'hometown',strength:7},
+        {from:'guanjia',to:'xie_laoye',type:'patron',strength:8}
+    ],
+    timeline: [
+        {phase:'春耕交租',contextTime:'天监三年 · 春耕交租',
+         contextPlace:'春耕在即，管家来收去年的尾租。去年歉收，你还欠谢家三石稻谷。管家说"再不交就加利息"。',
+         nodes:[
+            {id:'zhongzi',name:'种子贩子',type:'business',x:-200,y:40,r:14,
+             desc:'走街串巷卖种子的贩子，今年的稻种比去年贵了两成。你想赊账，他要三分利。不买又怕误了农时。',
+             quote:'春种一粒粟，秋收万颗子。',source:'李绅《悯农》'},
+            {id:'laofu',name:'隔壁老佃户',type:'hometown',x:200,y:-40,r:14,
+             desc:'种了谢家三十年田的老佃户，去年秋天死了老伴，一个人过日子。他悄悄告诉你："谢家要加租，你早做准备。"',
+             quote:'老骥伏枥，志在千里。',source:'曹操《步出夏门行》'}
+         ],
+         edges:[
+            {from:'player',to:'zhongzi',type:'business',strength:-3},
+            {from:'player',to:'laofu',type:'hometown',strength:4},
+            {from:'aniu',to:'zhongzi',type:'business',strength:-2},
+            {from:'laofu',to:'guanjia',type:'enemy',strength:-3}
+         ],
+         toast:{title:'春耕交租',content:'春耕在即，管家来催去年的尾租。你欠谢家三石稻谷，不还就要加利息。'}},
+        {phase:'服杂役',contextTime:'天监三年 · 夏季',
+         contextPlace:'谢老爷家盖新宅，征调佃户服杂役。你要去干十天，管一顿午饭但没有工钱。田里的草没人除了。',
+         nodes:[
+            {id:'xie_shaoye',name:'谢家少爷',type:'patron',x:100,y:-220,r:15,
+             desc:'谢老爷的独子，今年十八，读过几年书但不成器。喜欢斗鸡走狗，对佃户颐指气使。盖新宅就是他的主意。',
+             quote:'贵公子骄奢淫逸。',source:'《颜氏家训·勉学》'},
+            {id:'mugong',name:'谢家木匠',type:'business',x:-160,y:-180,r:14,
+             desc:'被谢家雇来盖宅子的木匠，手艺不错。他是自由人，干活按天算钱，一天三十文。你暗暗羡慕他。',
+             quote:'百工之人，各有其能。',source:'《通典》'}
+         ],
+         edges:[
+            {from:'player',to:'xie_shaoye',type:'patron',strength:-2},
+            {from:'player',to:'mugong',type:'business',strength:4},
+            {from:'xie_laoye',to:'xie_shaoye',type:'blood',strength:9},
+            {from:'mugong',to:'xie_shaoye',type:'patron',strength:3}
+         ],
+         toast:{title:'服杂役',content:'谢家盖新宅，征调佃户服杂役。你去了十天，田里的草却荒了。'}},
+        {phase:'秋收分租',contextTime:'天监三年 · 秋收',
+         contextPlace:'秋收了，管家带着大斗来分租。五成地租加上尾租的利息，你今年只剩四石谷子。冬天怎么过？',
+         nodes:[
+            {id:'yinhang',name:'高利贷者刘三',type:'business',x:220,y:150,r:16,
+             desc:'镇上放高利贷的，利息五成。你去借过一次，差点还不清。他笑眯眯地说："不急，明年还也行，利息照算。"',
+             quote:'贷钱者，利上生利。',source:'《南史》'},
+            {id:'aniu_wife',name:'阿牛的媳妇',type:'hometown',x:-220,y:140,r:14,
+             desc:'阿牛去年娶的媳妇，勤快能干。她偷偷给你妻子送来一篮鸡蛋，说："互帮互助嘛。"',
+             quote:'邻里相周，急难相恤。',source:'《颜氏家训·治家》'},
+            {id:'qianshou',name:'攒钱陶罐',type:'business',x:0,y:240,r:12,
+             desc:'你从陶匠那里买了个小罐，每月偷偷往里面丢几文铜钱。这是你的秘密，连妻子都不知道。照这个速度，大概十年能攒够买五亩田的钱。'}
+         ],
+         edges:[
+            {from:'player',to:'yinhang',type:'business',strength:-5},
+            {from:'wife',to:'aniu_wife',type:'hometown',strength:5},
+            {from:'player',to:'qianshou',type:'business',strength:6},
+            {from:'aniu',to:'aniu_wife',type:'blood',strength:9}
+         ],
+         toast:{title:'秋收分租',content:'秋收分租后只剩四石谷子，冬天怎么过？你开始偷偷攒钱，做着赎身的梦。'}},
+        {phase:'赎身之念',contextTime:'天监三年 · 岁末',
+         contextPlace:'冬天格外冷，谢老爷突然宣布加租一成。你攒的那点钱远远不够。同村的老佃户被赶走了，你看着空了的田，心里生出从未有过的念头。',
+         nodes:[
+            {id:'tao_hu',name:'逃走的佃户老孙',type:'hometown',x:-240,y:0,r:14,
+             desc:'欠了三年租的佃户，半夜带着一家老小跑了。管家气得跳脚，说要报官追捕。你不知道该替他担心还是羡慕他的勇气。',
+             quote:'亡命者，不得已也。',source:'《汉书》'},
+            {id:'xie_laoye2',name:'谢老爷（翻脸）',type:'enemy',x:180,y:-180,r:20,
+             desc:'听说你想走，谢老爷变了脸色。他说："你欠我的租子没清，人不能走。"派管家日夜盯着你。依附关系的绳索越收越紧。',
+             quote:'身未脱而困已深。',source:'《南齐书》'},
+            {id:'wannian',name:'妻子的私房钱',type:'blood',x:240,y:180,r:14,
+             desc:'妻子把她偷偷攒了两年的私房钱拿了出来——三百文。她红着眼圈说："拿去还租吧，别去冒险。"你攥着那几串铜钱，心里五味杂陈。',
+             quote:'结发为夫妻，恩爱两不疑。',source:'《古诗十九首》'}
+         ],
+         edges:[
+            {from:'player',to:'tao_hu',type:'hometown',strength:4},
+            {from:'player',to:'xie_laoye2',type:'enemy',strength:-7},
+            {from:'xie_laoye',to:'xie_laoye2',type:'patron',strength:8},
+            {from:'player',to:'wannian',type:'blood',strength:10}
+         ],
+         toast:{title:'赎身之念',content:'谢老爷加租一成，你想走却被威胁追债。妻子的私房钱是最后的温情。'}}
+    ]
+},
+
+// ===== 3. 奴隶（不自由）=====
+nuli: {
+    identityName: '奴隶',
+    rankLabel: '不自由',
+    rankClass: 'rank-unfree',
+    subtitle: '以贵族家奴视角展开',
+    contextDefault: {time:'天监三年 · 日常',place:'建康城内萧府，你是萧家的家奴。没有田产，没有自由，唯一的财产是身上这件粗布衣裳。',tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（家奴）',type:'player',x:0,y:0,r:24,
+         desc:'萧府的家奴，从小被卖入府中。没有田产、没有自由，干的活从扫地倒夜壶到伺候宴席无所不包。唯一的安慰是同奴阿桂，你们是在这府里唯一能说知心话的人。',
+         quote:'奴婢者，主之财产也。',source:'《宋书·刑法志》',thought:'牢笼之中尚有微光'},
+        {id:'zhu',name:'主人萧府老爷',type:'patron',x:0,y:-170,r:24,
+         desc:'萧家现任家主，朝廷的散骑常侍。为人表面宽和，实则城府极深。对下人赏罚分明，但"罚"的分量总是比"赏"重。他的一句话就能决定你的生死。',
+         quote:'奴婢不得干豫政事。',source:'《宋书》'},
+        {id:'guanjia_zhao',name:'管家赵叔',type:'enemy',x:170,y:70,r:18,
+         desc:'萧府的大管家，管着府里几十个奴婢。为人阴险，最喜欢打小报告。你犯了任何错他都会添油加醋报告给主人。你恨他但不敢表现出来。',
+         quote:'小人巧令，以媚主人。',source:'《颜氏家训》'},
+        {id:'agui_nu',name:'同奴阿桂',type:'hometown',x:-160,y:60,r:16,
+         desc:'跟你一起长大的同奴，比你大两岁。她是厨房里的丫鬟，负责做饭和采买。她父亲也是萧府的奴仆——奴隶的身份是世袭的。她是你在这世上最亲近的人。',
+         quote:'同类相怜，同命相惜。',source:'《南史》'},
+        {id:'laomomo',name:'老嬷嬷',type:'teacher',x:-100,y:-120,r:16,
+         desc:'在萧府待了四十年的老奴，如今负责教新来的奴仆规矩。她总是叹气说："在这府里，活着的唯一法子就是别有自己的想法。"',
+         quote:'奴有奴命，安之若素。',source:'《颜氏家训·治家》'}
+    ],
+    initialEdges: [
+        {from:'player',to:'zhu',type:'patron',strength:5},
+        {from:'player',to:'guanjia_zhao',type:'enemy',strength:-6},
+        {from:'player',to:'agui_nu',type:'hometown',strength:8},
+        {from:'player',to:'laomomo',type:'teacher',strength:5},
+        {from:'guanjia_zhao',to:'zhu',type:'patron',strength:7}
+    ],
+    timeline: [
+        {phase:'日常服役',contextTime:'天监三年 · 春',
+         contextPlace:'萧府举办春宴，你负责端菜倒酒。宴席上觥筹交错，你跪在角落里伺候，听着老爷们谈笑风生。',
+         nodes:[
+            {id:'keke',name:'萧家少爷',type:'patron',x:160,y:-140,r:15,
+             desc:'萧老爷的独子，今年十六。从小锦衣玉食，对你呼来喝去从不把奴仆当人看。但他偶尔也会偷偷塞给你一块点心。',
+             quote:'贵贱有隔，血脉相连。',source:'《南史》'},
+            {id:'waiter',name:'酒肆掌柜',type:'business',x:-200,y:-30,r:14,
+             desc:'萧府常去的那家酒肆的掌柜，你每次跟着老爷去都能偷空跟他聊几句。他告诉你外面的米价又涨了，城外有流民在抢粮。',
+             quote:'米价腾贵，民不聊生。',source:'《南齐书》'}
+         ],
+         edges:[
+            {from:'player',to:'keke',type:'patron',strength:2},
+            {from:'player',to:'waiter',type:'business',strength:4},
+            {from:'zhu',to:'keke',type:'blood',strength:9}
+         ],
+         toast:{title:'日常服役',content:'萧府春宴，你跪在角落伺候。外面的世界在变化，而你被困在这深宅大院里。'}},
+        {phase:'获得信任',contextTime:'天监三年 · 夏',
+         contextPlace:'萧老爷发现你会写字——这是老嬷嬷偷偷教你的。他开始让你帮忙抄写书信，对你的态度好了些，但管家的眼里多了嫉恨。',
+         nodes:[
+            {id:'sheren',name:'萧老爷的幕客',type:'teacher',x:-180,y:-180,r:15,
+             desc:'萧老爷请来的幕客，负责起草文书。他看到你写的字后颇为惊讶，私下对你说："你有才学，可惜生错了身份。"他偶尔会教你几个字。',
+             quote:'才学不问出身，然出身定终身。',source:'《南齐书》'},
+            {id:'guanjia2',name:'管家赵叔（刁难）',type:'enemy',x:200,y:120,r:18,
+             desc:'见你受宠，管家开始处处刁难你。故意把最重的活分给你，还在萧老爷面前暗示你"心术不正、图谋不轨"。',
+             quote:'小人难养，近之则不逊。',source:'《论语》'}
+         ],
+         edges:[
+            {from:'player',to:'sheren',type:'teacher',strength:6},
+            {from:'player',to:'guanjia2',type:'enemy',strength:-7},
+            {from:'guanjia_zhao',to:'guanjia2',type:'enemy',strength:6}
+         ],
+         toast:{title:'获得信任',content:'你会写字的事被萧老爷发现了，他开始重用你。但管家因此更加嫉恨，暗中使绊子。'}},
+        {phase:'犯错受罚',contextTime:'天监三年 · 秋',
+         contextPlace:'管家诬陷你偷了萧家的玉佩。你百口莫辩，被打了二十板子关进柴房。阿桂偷偷给你送药，老嬷嬷替你求情。',
+         nodes:[
+            {id:'chufang',name:'厨房胖婶',type:'hometown',x:-220,y:80,r:14,
+             desc:'萧府厨房的管事婆子，在府里待了二十年。她暗中帮你作证——那天晚上管家自己进了库房。但她不敢公开说出来。',
+             quote:'明哲保身，此之谓也。',source:'《颜氏家训》'},
+            {id:'laomomo2',name:'老嬷嬷（求情）',type:'teacher',x:120,y:200,r:16,
+             desc:'年迈的老嬷嬷颤巍巍地跪在萧老爷面前替你求情。她说："这孩子是我教出来的，我知道他不会偷东西。"萧老爷沉吟半晌，最终罚你多做一年苦役。',
+             quote:'老妪之力，微薄而诚。',source:'《南史》'}
+         ],
+         edges:[
+            {from:'player',to:'chufang',type:'hometown',strength:5},
+            {from:'player',to:'laomomo2',type:'teacher',strength:7},
+            {from:'agui_nu',to:'chufang',type:'hometown',strength:4},
+            {from:'laomomo',to:'laomomo2',type:'blood',strength:9}
+         ],
+         toast:{title:'犯错受罚',content:'管家诬陷你偷玉佩，你被打了二十板子。老嬷嬷替你求情，才免去更重的惩罚。'}},
+        {phase:'侯景之乱·免奴为民',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景叛军攻入建康，萧府一片混乱。老爷带着家眷逃跑，管家趁火打劫后也跑了。你站在空荡荡的府门前——你自由了。',
+         nodes:[
+            {id:'houjing_bing',name:'侯景乱兵',type:'enemy',x:-180,y:-160,r:16,
+             desc:'侯景的叛军在城中烧杀抢掠。他们路过萧府时抢走了值钱的东西，所幸没有伤人。你躲在柴房里，听着一墙之隔的哭喊声。',
+             quote:'侯景之乱，建康涂炭。',source:'《南史·梁本纪》'},
+            {id:'agui_ziyou',name:'阿桂（同获自由）',type:'hometown',x:200,y:-100,r:16,
+             desc:'阿桂拉着你的手，眼泪止不住地流。她说："我们自由了。"你们一起走出萧府大门，站在建康城的废墟中，不知道该去哪里，但心里是轻松的。',
+             quote:'免奴为良，自此为人。',source:'《隋书·刑法志》'},
+            {id:'zhanhou',name:'战后废墟',type:'enemy',x:0,y:200,r:14,
+             desc:'曾经繁华的建康城，如今满目疮痍。宫城被焚，百姓流离。你和阿桂在废墟中找到了一间破庙栖身。自由了，但前路茫茫。',
+             quote:'千里无烟，人迹罕见。',source:'《南史·侯景传》'}
+         ],
+         edges:[
+            {from:'player',to:'houjing_bing',type:'enemy',strength:-8},
+            {from:'player',to:'agui_ziyou',type:'hometown',strength:10},
+            {from:'player',to:'zhanhou',type:'enemy',strength:-3},
+            {from:'agui_nu',to:'agui_ziyou',type:'blood',strength:10}
+         ],
+         toast:{title:'侯景之乱·免奴为民',content:'侯景叛军攻入建康，萧府崩溃。你和阿桂站在废墟中——终于自由了，但前路茫茫。'}}
+    ]
+},
+
+// ===== 4. 兵户（官户）=====
+binghu: {
+    identityName: '兵户',
+    rankLabel: '官户',
+    rankClass: 'rank-official',
+    subtitle: '以世袭军户视角展开',
+    contextDefault: {time:'天监三年 · 日常',place:'建康城外军屯营地，你是世袭兵户，平时屯田种地，战时披甲出征。',tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（兵户）',type:'player',x:0,y:0,r:26,
+         desc:'世袭军户，祖上三代都是兵。平时在军屯种地，战时要自备武器出征。屯田分给你的二十亩地收成不好，加上军需官克扣粮饷，日子过得紧巴巴。',
+         quote:'兵户者，世袭为兵，免其租调。',source:'《通典·食货》',thought:'屯田刀戈两不忘'},
+        {id:'wuzhang',name:'伍长老赵',type:'teacher',x:-140,y:-80,r:17,
+         desc:'你的直接上级，从军二十年，打过北魏也平过叛乱。左臂在战场上受过伤，如今使不了大力气。他对你不错，常教你使刀的技巧。',
+         quote:'将在谋而不在勇。',source:'《孙子兵法》'},
+        {id:'tongbao',name:'同袍兄弟阿刚',type:'blood',x:140,y:-70,r:16,
+         desc:'跟你同一批入伍的兵户子弟，你们从小一起长大。为人豪爽仗义，上次你生病是他替你值了三夜夜班。军中最铁的关系就是同袍。',
+         quote:'岂曰无衣，与子同袍。',source:'《诗经·秦风》'},
+        {id:'junxuguan',name:'军需官孙大人',type:'patron',x:0,y:-170,r:19,
+         desc:'负责军屯粮饷发放的军官，为人贪婪。每次发粮都会克扣一些，说是"损耗"。你敢怒不敢言——他是县丞的小舅子。',
+         quote:'军需之弊，上下交征。',source:'《宋书》'},
+        {id:'tuntian',name:'屯田老兵李叔',type:'hometown',x:-80,y:120,r:16,
+         desc:'快六十岁的老兵，在军屯种了一辈子地。他的腿是在钟离之战中冻伤的，走路一瘸一拐。他常说："当兵的人，命不是自己的。"',
+         quote:'一将功成万骨枯。',source:'曹松《己亥岁》'}
+    ],
+    initialEdges: [
+        {from:'player',to:'wuzhang',type:'teacher',strength:7},
+        {from:'player',to:'tongbao',type:'blood',strength:9},
+        {from:'player',to:'junxuguan',type:'patron',strength:-3},
+        {from:'player',to:'tuntian',type:'hometown',strength:6},
+        {from:'wuzhang',to:'junxuguan',type:'patron',strength:4}
+    ],
+    timeline: [
+        {phase:'日常训练',contextTime:'天监三年 · 春',
+         contextPlace:'开春了，上头下令加强训练。每天操练到日落，回到营地还要翻地种田。军需官发的新甲胄薄得像纸，你知道上战场靠不住。',
+         nodes:[
+            {id:'xinying',name:'新兵小陈',type:'hometown',x:180,y:120,r:14,
+             desc:'刚入伍的少年，才十六岁。紧张得连刀都握不稳。你想起自己当年也是这样。伍长让你带他，你教他怎么站队列、怎么使盾牌。',
+             quote:'少年从军，不知死所。',source:'《南史》'},
+            {id:'gongjiang',name:'军中铁匠',type:'business',x:-200,y:-20,r:15,
+             desc:'军营里的铁匠，专门打造和修理兵器。你私下求他把你那把卷了刃的刀修一修，他要你用两天的口粮换。你知道这是讹诈，但没有别的办法。',
+             quote:'工欲善其事，必先利其器。',source:'《论语》'}
+         ],
+         edges:[
+            {from:'player',to:'xinying',type:'hometown',strength:5},
+            {from:'player',to:'gongjiang',type:'business',strength:3},
+            {from:'xinying',to:'wuzhang',type:'teacher',strength:3}
+         ],
+         toast:{title:'日常训练',content:'开春加强训练，军需官发的甲胄薄如纸。新兵小陈分到你的伍里，你开始教他。'}},
+        {phase:'钟离之战',contextTime:'天监六年 · 钟离之战',
+         contextPlace:'北魏大军南下，你随军北上增援钟离。此战惨烈，魏军死者十余万。你亲眼看到同袍倒下，鲜血染红了淮河的水。',
+         nodes:[
+            {id:'wei_jun',name:'北魏大军',type:'enemy',x:0,y:-240,r:22,
+             desc:'北魏倾国之力南下，号称百万之众。实际上约有三十万。他们在淮河北岸扎营，与梁军隔河对峙。钟离之战是南朝百年未有的大捷。',
+             quote:'钟离之捷，魏军死者十余万。',source:'《南史·梁本纪》'},
+            {id:'shangshang',name:'受伤的同袍',type:'blood',x:-180,y:160,r:15,
+             desc:'阿刚在冲锋时被箭射中了肩膀。你冒着箭雨把他拖回阵地。军医说箭头取出来了，但这条胳膊怕是废了。他的从军生涯到此为止。',
+             quote:'死生契阔，与子同袍。',source:'《诗经》'}
+         ],
+         edges:[
+            {from:'player',to:'wei_jun',type:'enemy',strength:-9},
+            {from:'player',to:'shangshang',type:'blood',strength:9},
+            {from:'tongbao',to:'shangshang',type:'blood',strength:10},
+            {from:'wuzhang',to:'wei_jun',type:'enemy',strength:-7}
+         ],
+         toast:{title:'钟离之战',content:'北魏南下，钟离之战爆发。你随军出征，亲眼见证南朝百年未有之大捷。阿刚负伤了。'}},
+        {phase:'屯田生涯',contextTime:'天监七年 · 屯田',
+         contextPlace:'从钟离回来后，你继续屯田种地。但军需官克扣的粮饷更多了——说是"军费紧张"。你带着几个兵户去找他理论，差点被治罪。',
+         nodes:[
+            {id:'binghu_zhang',name:'兵户老张',type:'hometown',x:220,y:100,r:14,
+             desc:'跟你一起去找军需官理论的兵户。他比你更硬气，当面质问："朝廷拨的粮饷到哪里去了？"结果被军需官以"以下犯上"的罪名罚了二十军棍。',
+             quote:'兔死狐悲，物伤其类。',source:'《南史》'},
+            {id:'xiancheng',name:'县丞',type:'patron',x:-160,y:-180,r:18,
+             desc:'军需官的后台，当地县丞。你写了状纸想告军需官，但状纸根本递不上去——县丞和军需官是一伙的。世道的规矩你懂，但你咽不下这口气。',
+             quote:'上下相蒙，以求苟安。',source:'《通典》'}
+         ],
+         edges:[
+            {from:'player',to:'binghu_zhang',type:'hometown',strength:6},
+            {from:'player',to:'xiancheng',type:'patron',strength:-4},
+            {from:'junxuguan',to:'xiancheng',type:'patron',strength:7}
+         ],
+         toast:{title:'屯田生涯',content:'战后回归屯田，军需官克扣粮饷更甚。你去找他理论，差点被治罪。'}},
+        {phase:'侯景之乱',contextTime:'太清二年 · 侯景之乱',
+         contextPlace:'侯景叛乱，建康告急。你所在的军屯接到调令，要入城勤王。但军需官带着粮饷跑了，你们连干粮都没有就要上战场。',
+         nodes:[
+            {id:'houjing_jun',name:'侯景叛军',type:'enemy',x:0,y:220,r:20,
+             desc:'侯景的叛军围困建康台城百余日。城内粮尽，人相食。你和残存的兵户拼死抵抗，但无粮无援，败局已定。',
+             quote:'台城之围，百三十日。',source:'《南史·侯景传》'},
+            {id:'tuntian2',name:'老兵李叔（战死）',type:'blood',x:-200,y:200,r:15,
+             desc:'六十岁的老兵李叔拿起了他珍藏了三十年的旧刀，说要"再上一次阵"。他在城墙上被射中，倒在你的怀里，最后一句话是："下辈子不当兵了。"',
+             quote:'老兵不死，只是凋零。',source:'佚名'},
+            {id:'tongbao2',name:'同袍阿刚（独臂守城）',type:'blood',x:200,y:200,r:16,
+             desc:'阿刚的右臂废了，但他用左手拿刀，跟你一起守在城墙上。他说："这条命本来就是你救回来的，今天还你。"城破后你们一起逃出了建康。',
+             quote:'士为知己者死。',source:'《史记》'}
+         ],
+         edges:[
+            {from:'player',to:'houjing_jun',type:'enemy',strength:-9},
+            {from:'player',to:'tuntian2',type:'blood',strength:8},
+            {from:'player',to:'tongbao2',type:'blood',strength:10},
+            {from:'tuntian',to:'tuntian2',type:'blood',strength:10}
+         ],
+         toast:{title:'侯景之乱',content:'侯景围困台城，军需官卷粮饷而逃。老兵李叔战死，你与独臂的阿刚死守到最后。'}}
+    ]
+},
+
+// ===== 5. 吏户（官户）=====
+lihu: {
+    identityName: '吏户',
+    rankLabel: '官户',
+    rankClass: 'rank-official',
+    subtitle: '以县衙小吏视角展开',
+    contextDefault: {time:'天监三年 · 日常',place:'秣陵县衙，你是县衙的里正，上承官府令旨，下管乡里事务。',tag:'初始'},
+    initialNodes: [
+        {id:'player',name:'你（里正）',type:'player',x:0,y:0,r:26,
+         desc:'秣陵县下辖某里的里正，负责催缴赋税、登记户口、维持治安。是官府与百姓之间的纽带，也是夹缝中的人——上头要你多收税，下头骂你催命。',
+         quote:'里正、村正，掌按比户口。',source:'《通典·职官》',thought:'两头受气中间人'},
+        {id:'xiancheng_li',name:'县丞',type:'patron',x:0,y:-170,r:20,
+         desc:'你的直接上级，秣陵县丞。为人精明，深谙官场之道。他对你不错，但要求也很高——每年税收必须完成定额，完不成你就得自己掏腰包补。',
+         quote:'县丞佐县令，掌税务钱粮。',source:'《宋书·百官志》'},
+        {id:'xiangshen',name:'乡绅钱老爷',type:'business',x:-170,y:-70,r:18,
+         desc:'当地最大的乡绅，名下田产三百亩。他常来找你打听县里的消息，作为交换会给你一些"好处"。你知道他在偷偷兼并小农的田地，但你睁一只眼闭一只眼。',
+         quote:'豪强兼并，小民失业。',source:'《南齐书》'},
+        {id:'shiye',name:'师爷',type:'teacher',x:150,y:-80,r:17,
+         desc:'县丞请来的幕僚，负责起草文书和出谋划策。他教你如何写公文、如何跟上级打交道。他说："做吏的诀窍就是——上不欺下不瞒，中间留一线。"',
+         quote:'幕友者，官之耳目也。',source:'《通典》'},
+        {id:'laodang',name:'老搭档（甲长）',type:'hometown',x:-90,y:110,r:16,
+         desc:'跟你搭档多年的甲长，负责几个村子的日常事务。为人厚道，跟你配合默契。他常说："咱俩就是官府和百姓中间的磨心，两头磨损。"',
+         quote:'上下交接，中间为难。',source:'《颜氏家训》'}
+    ],
+    initialEdges: [
+        {from:'player',to:'xiancheng_li',type:'patron',strength:7},
+        {from:'player',to:'xiangshen',type:'business',strength:5},
+        {from:'player',to:'shiye',type:'teacher',strength:6},
+        {from:'player',to:'laodang',type:'hometown',strength:8},
+        {from:'xiancheng_li',to:'shiye',type:'patron',strength:6}
+    ],
+    timeline: [
+        {phase:'日常收税',contextTime:'天监三年 · 春',
+         contextPlace:'朝廷的税额又涨了。你带着甲长挨家挨户收税，自耕农们叫苦连天。你知道他们交不起，但县丞的命令不能违抗。',
+         nodes:[
+            {id:'nongmin_a',name:'贫困户老李',type:'hometown',x:-200,y:60,r:14,
+             desc:'村里最穷的农户，去年歉收，颗粒无收。他跪在你面前哭诉："里正大人，真的交不起了。"你心里不好受，但税额是从上面压下来的。',
+             quote:'苛政猛于虎。',source:'《礼记》'},
+            {id:'nongmin_b',name:'抗税农户赵四',type:'enemy',x:200,y:40,r:15,
+             desc:'脾气暴躁的农户，公然抗税不交。你要报官抓他，老搭档劝你"息事宁人"。但县丞催得紧，你夹在中间左右为难。',
+             quote:'民不畏死，奈何以死惧之。',source:'《老子》'}
+         ],
+         edges:[
+            {from:'player',to:'nongmin_a',type:'hometown',strength:4},
+            {from:'player',to:'nongmin_b',type:'enemy',strength:-5},
+            {from:'laodang',to:'nongmin_a',type:'hometown',strength:5},
+            {from:'laodang',to:'nongmin_b',type:'hometown',strength:3}
+         ],
+         toast:{title:'日常收税',content:'税额又涨了，你挨家挨户收税。贫困户跪地哭诉，有人公然抗税。你夹在中间左右为难。'}},
+        {phase:'信息交易',contextTime:'天监三年 · 夏',
+         contextPlace:'乡绅钱老爷找上门来，想买县里关于"清丈田亩"的内部消息。他出价不菲——二十贯钱。你知道这是违法的，但二十贯是你三年的俸禄。',
+         nodes:[
+            {id:'xiangshen2',name:'乡绅的筹码',type:'business',x:-200,y:-160,r:16,
+             desc:'钱老爷的管家送来二十贯钱和一坛好酒，还有一句话："钱老爷说了，咱们是老朋友，互相照应嘛。"你收下了酒，钱暂时没动。',
+             quote:'利之所在，虽千万人吾往矣。',source:'《孟子》'},
+            {id:'xiaoli_li',name:'县衙另一小吏',type:'hometown',x:180,y:140,r:14,
+             desc:'跟你同在县衙当差的小吏，私底下关系不错。他警告你："钱老爷跟县丞的关系不一般，小心被利用完就丢。"',
+             quote:'伴君如伴虎。',source:'《韩非子》'}
+         ],
+         edges:[
+            {from:'player',to:'xiangshen2',type:'business',strength:3},
+            {from:'player',to:'xiaoli_li',type:'hometown',strength:5},
+            {from:'xiangshen',to:'xiangshen2',type:'business',strength:7}
+         ],
+         toast:{title:'信息交易',content:'乡绅想买清丈田亩的内幕消息，出价二十贯。你收了酒但没动钱，内心天人交战。'}},
+        {phase:'得罪上司',contextTime:'天监三年 · 秋',
+         contextPlace:'你按规矩如实上报了钱老爷兼并田地的数目，得罪了乡绅。钱老爷通过关系给县丞施压，县丞开始对你冷眼相待。',
+         nodes:[
+            {id:'xiancheng_li2',name:'县丞（翻脸）',type:'enemy',x:160,y:-160,r:20,
+             desc:'县丞把你叫去，冷冷地说："你很能干，但太不懂事了。"暗示你"识时务者为俊杰"。你意识到如实上报是一个错误，但已经无法收回了。',
+             quote:'伴虎者危，直言者殆。',source:'《颜氏家训》'},
+            {id:'shiye2',name:'师爷（劝告）',type:'teacher',x:-160,y:180,r:16,
+             desc:'师爷私下找到你，叹了口气说："你做得对，但做得不是时候。这官场如棋局，你把对方的棋子掀了，自己也得退一步。"',
+             quote:'明哲保身，非懦也。',source:'《通典》'}
+         ],
+         edges:[
+            {from:'player',to:'xiancheng_li2',type:'enemy',strength:-7},
+            {from:'player',to:'shiye2',type:'teacher',strength:6},
+            {from:'xiancheng_li',to:'xiancheng_li2',type:'patron',strength:9},
+            {from:'shiye',to:'shiye2',type:'teacher',strength:8}
+         ],
+         toast:{title:'得罪上司',content:'你如实上报了乡绅兼并田地之事，得罪了钱老爷和县丞。师爷说你"做得对但不是时候"。'}},
+        {phase:'被举荐/被罢免',contextTime:'天监三年 · 岁末',
+         contextPlace:'年底考核，有人举荐你"清正廉洁"，也有人弹劾你"办事不力"。新县令走马上任，你的命运悬于一线。',
+         nodes:[
+            {id:'xianling_xin',name:'新任县令',type:'patron',x:0,y:230,r:20,
+             desc:'新来的县令是个年轻人，据说有后台。他看了你的档案，单独找你谈了一次话。他说："你的事我听说了。做官做吏，最难的就是一个「正」字。"你不知道这是褒是贬。',
+             quote:'举直错诸枉，则民服。',source:'《论语·为政》'},
+            {id:'nongmin_xie',name:'替你说话的农户们',type:'hometown',x:-220,y:120,r:14,
+             desc:'你平时帮过的贫困户老李和几个农户联名写了状纸，替你说好话。老李说："里正虽然收税狠了些，但他是按规矩办事，从不中饱私囊。"',
+             quote:'政之所兴，在顺民心。',source:'《管子》'},
+            {id:'laodang2',name:'老搭档的忠告',type:'blood',x:220,y:120,r:16,
+             desc:'老搭档找到你，认真地说："不管结果如何，跟我没关系。但你要是还想在这官场上混，就得学会——有时候对的事，也得用错的方式做。"你沉默了很久。',
+             quote:'水至清则无鱼，人至察则无徒。',source:'《大戴礼记》'}
+         ],
+         edges:[
+            {from:'player',to:'xianling_xin',type:'patron',strength:5},
+            {from:'player',to:'nongmin_xie',type:'hometown',strength:7},
+            {from:'player',to:'laodang2',type:'hometown',strength:8},
+            {from:'nongmin_a',to:'nongmin_xie',type:'hometown',strength:6}
+         ],
+         toast:{title:'被举荐/被罢免',content:'年底考核，农户们联名替你说话，新县令找你谈话。你的仕途悬于一线。'}}
+    ]
+}
+
+};
+
+// ========== 身份选择UI ==========
+var IDENTITY_LIST = [
+    {id:'zigenong', name:'自耕农', rank:'自由民', cls:'rank-free'},
+    {id:'dianhu', name:'佃户', rank:'半自由', cls:'rank-half'},
+    {id:'nuli', name:'奴隶', rank:'不自由', cls:'rank-unfree'},
+    {id:'binghu', name:'兵户', rank:'官户', cls:'rank-official'},
+    {id:'lihu', name:'吏户', rank:'官户', cls:'rank-official'}
+];
+
+function buildIdentityButtons() {
+    var container = document.getElementById('identityButtons');
+    var html = '';
+    for (var i = 0; i < IDENTITY_LIST.length; i++) {
+        var item = IDENTITY_LIST[i];
+        var active = item.id === currentIdentity ? ' active' : '';
+        html += '<button class="identity-btn' + active + '" data-id="' + item.id + '" onclick="switchIdentity(\'' + item.id + '\')">' +
+            '<span class="id-name">' + item.name + '</span>' +
+            '<span class="id-rank ' + item.cls + '">' + item.rank + '</span></button>';
+    }
+    container.innerHTML = html;
+}
+
+function switchIdentity(id) {
+    if (!ALL_DATA[id]) return;
+    currentIdentity = id;
+    // 更新按钮状态
+    var btns = document.querySelectorAll('.identity-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('active', btns[i].getAttribute('data-id') === id);
+    }
+    resetNetwork();
+}
+
+function getCurrentData() {
+    return ALL_DATA[currentIdentity];
+}
+
+// ========== 情境面板更新 ==========
+function updateContext() {
+    var timeEl = document.getElementById('contextTime');
+    var placeEl = document.getElementById('contextPlace');
+    var tagEl = document.getElementById('contextTag');
+    var data = getCurrentData();
+    if (currentPhase < 0) {
+        timeEl.textContent = data.contextDefault.time;
+        placeEl.textContent = data.contextDefault.place;
+        tagEl.textContent = data.contextDefault.tag;
+    } else {
+        var evt = data.timeline[currentPhase];
+        timeEl.textContent = evt.contextTime;
+        placeEl.textContent = evt.contextPlace;
+        tagEl.textContent = evt.phase;
+    }
+    document.getElementById('sidebarSubtitle').textContent = data.subtitle;
+}
+
+// ========== 网络初始化 ==========
+function initNetwork() {
+    var data = getCurrentData();
+    nodes = [];
+    for (var i = 0; i < data.initialNodes.length; i++) {
+        var n = data.initialNodes[i];
+        nodes.push({
+            id: n.id, name: n.name, type: n.type, desc: n.desc, quote: n.quote, source: n.source, thought: n.thought,
+            x: cW/2 + n.x + (Math.random()-.5)*20, y: cH/2 + n.y + (Math.random()-.5)*20,
+            r: n.r, vx: 0, vy: 0
+        });
+    }
+    edges = [];
+    for (var i = 0; i < data.initialEdges.length; i++) {
+        var e = data.initialEdges[i];
+        edges.push({from: e.from, to: e.to, type: e.type, strength: e.strength});
+    }
+    scale = 1; panX = 0; panY = 0;
+    stabilize();
+}
+
+function updateStats() {
+    document.getElementById('statNodes').textContent = nodes.length - 1;
+    document.getElementById('statEdges').textContent = edges.length;
+    document.getElementById('statPhase').textContent = currentPhase + 1;
+}
+
+function updateTimelineUI() {
+    var data = getCurrentData();
+    var html = '';
+    for (var i = 0; i < data.timeline.length; i++) {
+        var evt = data.timeline[i];
+        var cls = i <= currentPhase ? 'active' : '';
+        var tag = i === currentPhase ? '<span class="new-tag">当前</span>' : '';
+        html += '<div class="timeline-event ' + cls + '" onclick="jumpToPhase(' + i + ')">' +
+            '<span class="phase">' + evt.phase + '</span>' + tag +
+            '<div class="desc">' + evt.toast.content + '</div></div>';
+    }
+    document.getElementById('timelineList').innerHTML = html;
+}
+
+function jumpToPhase(target) {
+    var data = getCurrentData();
+    initNetwork();
+    currentPhase = -1;
+    for (var i = 0; i <= target && i < data.timeline.length; i++) {
+        currentPhase = i;
+        var evt = data.timeline[i];
+        for (var j = 0; j < evt.nodes.length; j++) {
+            var nn = evt.nodes[j];
+            if (!nodes.find(function(n){return n.id===nn.id;})) {
+                nodes.push({
+                    id: nn.id, name: nn.name, type: nn.type, desc: nn.desc, quote: nn.quote, source: nn.source,
+                    x: cW/2 + nn.x + (Math.random()-.5)*30, y: cH/2 + nn.y + (Math.random()-.5)*30,
+                    r: nn.r, vx: 0, vy: 0, thought: nn.thought
+                });
+            }
+        }
+        for (var j = 0; j < evt.edges.length; j++) {
+            var ne = evt.edges[j];
+            if (!edges.find(function(e){return e.from===ne.from&&e.to===ne.to;})) {
+                edges.push({from: ne.from, to: ne.to, type: ne.type, strength: ne.strength});
+            }
+        }
+    }
+    stabilize();
+    updateStats(); updateTimelineUI(); updateContext();
+}
+
+function updateLegend() {
+    var legend = document.getElementById('legend');
+    legend.innerHTML = '<div class="legend-title">关系类型</div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:#dc5040"></div><span>血缘宗族</span></div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:#5082dc"></div><span>师徒技艺</span></div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:#3cb478"></div><span>商业往来</span></div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:#dcb43c"></div><span>邻里乡党</span></div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:#a050b4"></div><span>官民吏治</span></div>' +
+        '<div class="legend-item"><div class="legend-dot" style="background:#b43c3c"></div><span>冲突对抗</span></div>';
+}
+
+// ========== 物理引擎 ==========
+function physicsStep() {
+    var repulse = 5000, spring = 0.012, damp = 0.88;
+    for (var i = 0; i < nodes.length; i++) {
+        for (var j = i + 1; j < nodes.length; j++) {
+            var dx = nodes[j].x - nodes[i].x, dy = nodes[j].y - nodes[i].y;
+            var dist = Math.sqrt(dx*dx + dy*dy) || 1;
+            var f = repulse / (dist * dist);
+            var fx = (dx/dist) * f, fy = (dy/dist) * f;
+            nodes[i].vx -= fx; nodes[i].vy -= fy;
+            nodes[j].vx += fx; nodes[j].vy += fy;
+        }
+    }
+    for (var ei = 0; ei < edges.length; ei++) {
+        var e = edges[ei];
+        var n1 = nodes.find(function(n){return n.id===e.from;});
+        var n2 = nodes.find(function(n){return n.id===e.to;});
+        if (!n1 || !n2) continue;
+        var dx = n2.x - n1.x, dy = n2.y - n1.y;
+        var dist = Math.sqrt(dx*dx + dy*dy) || 1;
+        var target = 90 + Math.abs(e.strength) * 8;
+        var f = (dist - target) * spring;
+        var fx = (dx/dist) * f, fy = (dy/dist) * f;
+        n1.vx += fx; n1.vy += fy; n2.vx -= fx; n2.vy -= fy;
+    }
+    for (var ni = 0; ni < nodes.length; ni++) {
+        var n = nodes[ni];
+        n.vx += (cW/2 - n.x) * 0.002;
+        n.vy += (cH/2 - n.y) * 0.002;
+        n.vx *= damp; n.vy *= damp;
+        if (n !== dragNode) { n.x += n.vx; n.y += n.vy; }
+        var m = 50;
+        n.x = Math.max(m, Math.min(cW - m, n.x));
+        n.y = Math.max(m, Math.min(cH - m, n.y));
+    }
+}
+
+function stabilize() {
+    for (var i = 0; i < 80; i++) physicsStep();
+}
+
+// ========== 渲染 ==========
+function render() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cW, cH);
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(scale, scale);
+
+    // 边
+    for (var ei = 0; ei < edges.length; ei++) {
+        var e = edges[ei];
+        var n1 = nodes.find(function(n){return n.id===e.from;});
+        var n2 = nodes.find(function(n){return n.id===e.to;});
+        if (!n1 || !n2) continue;
+        ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y);
+        if (e.strength < 0) {
+            ctx.setLineDash([6, 4]);
+            ctx.strokeStyle = 'rgba(180,60,60,.35)';
+        } else {
+            ctx.setLineDash([]);
+            ctx.strokeStyle = (REL_COLORS[e.type] || '#888') + '45';
+        }
+        ctx.lineWidth = Math.max(1, Math.abs(e.strength) * 0.5);
+        ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // 节点
+    for (var ni = 0; ni < nodes.length; ni++) {
+        var n = nodes[ni];
+        var tc = n.type === 'player' ? '#d4a853' : (REL_COLORS[n.type] || '#888');
+        if (n === selectedNode || n === hoveredNode) {
+            ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 8, 0, Math.PI*2);
+            ctx.strokeStyle = '#d4a853'; ctx.lineWidth = 2.5; ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+        ctx.fillStyle = tc; ctx.fill();
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+        ctx.strokeStyle = n.type==='player'?'#d4a853':'rgba(255,255,255,.3)';
+        ctx.lineWidth = n.type==='player'?3:2; ctx.stroke();
+        if (n.type === 'player') {
+            ctx.beginPath(); ctx.arc(n.x, n.y, n.r - 6, 0, Math.PI*2);
+            ctx.strokeStyle = '#d4a85380'; ctx.lineWidth = 1; ctx.stroke();
+        }
+        ctx.fillStyle = '#e8d5b7'; ctx.font = (n.type==='player'?'bold ':'') + '12px serif'; ctx.textAlign = 'center';
+        ctx.fillText(n.name, n.x, n.y + n.r + 17);
+        if (n.type !== 'player') {
+            ctx.fillStyle = tc + 'cc'; ctx.font = '9px serif';
+            ctx.fillText(REL_LABELS[n.type] || '', n.x, n.y + n.r + 30);
+        }
+    }
+    ctx.restore();
+}
+
+function animate() {
+    physicsStep(); render();
+    requestAnimationFrame(animate);
+}
+
+// ========== 交互 ==========
+function getNodeAt(x, y) {
+    var mx = (x - panX) / scale, my = (y - panY) / scale;
+    for (var i = nodes.length - 1; i >= 0; i--) {
+        var dx = mx - nodes[i].x, dy = my - nodes[i].y;
+        if (Math.sqrt(dx*dx + dy*dy) <= nodes[i].r + 5) return nodes[i];
+    }
+    return null;
+}
+
+canvas.addEventListener('mousedown', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    lastMX = e.clientX - rect.left; lastMY = e.clientY - rect.top;
+    var node = getNodeAt(lastMX, lastMY);
+    if (node) { dragNode = node; selectedNode = node; showNodeInfo(node); }
+    else { isDragging = true; }
+});
+canvas.addEventListener('mousemove', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left, y = e.clientY - rect.top;
+    if (dragNode) {
+        dragNode.x = (x - panX) / scale; dragNode.y = (y - panY) / scale;
+        dragNode.vx = 0; dragNode.vy = 0;
+    } else if (isDragging) {
+        panX += x - lastMX; panY += y - lastMY;
+        lastMX = x; lastMY = y;
+    } else {
+        hoveredNode = getNodeAt(x, y);
+        canvas.style.cursor = hoveredNode ? 'pointer' : 'grab';
+    }
+});
+canvas.addEventListener('mouseup', function() { isDragging = false; dragNode = null; });
+canvas.addEventListener('mouseleave', function() { isDragging = false; dragNode = null; });
+canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var rect = canvas.getBoundingClientRect();
+    var x = e.clientX - rect.left, y = e.clientY - rect.top;
+    var factor = e.deltaY < 0 ? 1.12 : 0.88;
+    var ns = Math.max(0.4, Math.min(3, scale * factor));
+    panX = x - (x - panX) * (ns / scale); panY = y - (y - panY) * (ns / scale);
+    scale = ns;
+}, {passive:false});
+
+function showNodeInfo(node) {
+    var info = document.getElementById('nodeInfo');
+    info.classList.add('show');
+    document.getElementById('infoName').textContent = node.name;
+    document.getElementById('infoDesc').textContent = node.desc;
+    var quote = document.getElementById('infoQuote');
+    if (node.quote) { quote.style.display = 'block'; quote.textContent = '"' + node.quote + '" —— ' + (node.source || ''); }
+    else { quote.style.display = 'none'; }
+    var tagRow = document.getElementById('infoTags');
+    if (node.type === 'player') {
+        tagRow.innerHTML = '<span class="tag" style="background:rgba(212,168,83,.2);color:#d4a853;border:1px solid #d4a853">主角</span>' +
+            '<span class="tag" style="background:rgba(139,69,19,.2);color:#b8956a;border:1px solid #5c3317">' + (node.thought || '') + '</span>';
+    } else {
+        var tc = REL_COLORS[node.type] || '#888';
+        tagRow.innerHTML = '<span class="tag" style="background:' + tc + '20;color:' + tc + ';border:1px solid ' + tc + '">' + (REL_LABELS[node.type] || node.type) + '</span>';
+    }
+
+    // 更新左侧人物关系面板
+    var panel = document.getElementById('detailPanel');
+    var list = document.getElementById('relationList');
+    var relEdges = edges.filter(function(e){ return e.from === node.id || e.to === node.id; });
+    if (relEdges.length > 0) {
+        panel.style.display = 'block';
+        var html = '';
+        for (var i = 0; i < relEdges.length; i++) {
+            var re = relEdges[i];
+            var otherId = re.from === node.id ? re.to : re.from;
+            var otherNode = nodes.find(function(n){return n.id===otherId;});
+            if (!otherNode) continue;
+            var tc = REL_COLORS[re.type] || '#888';
+            var label = REL_LABELS[re.type] || re.type;
+            var strengthText = re.strength > 0 ? '亲密' + re.strength : (re.strength < 0 ? '紧张' + Math.abs(re.strength) : '中性');
+            html += '<li><span class="rel-name">' + otherNode.name + '</span>' +
+                '<span class="rel-type rel-' + re.type + '">' + label + ' · ' + strengthText + '</span></li>';
+        }
+        list.innerHTML = html;
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+// ========== 时间线推进 ==========
+function advanceTimeline() {
+    var data = getCurrentData();
+    currentPhase++;
+    if (currentPhase >= data.timeline.length) {
+        showToast('时间线已到达终点', '所有阶段已推进完毕，社会关系网络已完全展开。');
+        currentPhase = data.timeline.length - 1; return;
+    }
+    var evt = data.timeline[currentPhase];
+    // 添加新节点
+    for (var i = 0; i < evt.nodes.length; i++) {
+        var nn = evt.nodes[i];
+        if (!nodes.find(function(n){return n.id===nn.id;})) {
+            nodes.push({
+                id: nn.id, name: nn.name, type: nn.type, desc: nn.desc, quote: nn.quote, source: nn.source,
+                x: cW/2 + nn.x + (Math.random()-.5)*30, y: cH/2 + nn.y + (Math.random()-.5)*30,
+                r: nn.r, vx: 0, vy: 0, thought: nn.thought
+            });
+        }
+    }
+    // 添加新边
+    for (var i = 0; i < evt.edges.length; i++) {
+        var ne = evt.edges[i];
+        if (!edges.find(function(e){return e.from===ne.from&&e.to===ne.to;})) {
+            edges.push({from: ne.from, to: ne.to, type: ne.type, strength: ne.strength});
+        }
+    }
+    showToast(evt.toast.title, evt.toast.content);
+    updateStats(); updateTimelineUI(); updateContext();
+}
+
+function showToast(title, content) {
+    var t = document.getElementById('toast');
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastContent').textContent = content;
+    t.classList.add('show');
+    setTimeout(function(){t.classList.remove('show');}, 3000);
+}
+
+function resetNetwork() {
+    currentPhase = -1;
+    initNetwork();
+    updateStats(); updateTimelineUI(); updateContext();
+    document.getElementById('nodeInfo').classList.remove('show');
+    document.getElementById('detailPanel').style.display = 'none';
+}
+
+// ========== 启动 ==========
+window.addEventListener('resize', function(){ resizeCanvas(); render(); });
+buildIdentityButtons();
+initNetwork();
+updateStats(); updateTimelineUI(); updateLegend(); updateContext();
+setTimeout(function(){ resizeCanvas(); stabilize(); }, 200);
+animate();
+</script>
+</body>
+</html>

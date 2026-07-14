@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>浮沉梁 · 职场模式</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="game-header">
+    <div class="game-title">职场模式 · 仕途沉浮</div>
+    <div class="game-nav">
+      <button onclick="goHome()" class="btn btn-outline">返回主页</button>
+      <button onclick="saveGame()" class="btn btn-secondary">保存</button>
+    </div>
+  </header>
+
+  <div class="game-container">
+    <aside class="sidebar">
+      <div id="origin-select" class="section">
+        <h3 class="section-title">选择出身</h3>
+        <div class="origin-select">
+          <div onclick="selectOrigin('hanmen')" class="origin-card">
+            <div class="origin-name">寒门子弟</div>
+            <div class="origin-desc">出身寒微，从最底层做起，凭借军功或近臣路线晋升</div>
+            <div class="origin-stats">
+              <div class="origin-stat">
+                <div class="origin-stat-label">军功</div>
+                <div class="origin-stat-value stat-military">0</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">文治</div>
+                <div class="origin-stat-value stat-civil">2</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">人情</div>
+                <div class="origin-stat-value stat-guanxi">1</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">声望</div>
+                <div class="origin-stat-value">10</div>
+              </div>
+            </div>
+          </div>
+          <div onclick="selectOrigin('low-shizu')" class="origin-card">
+            <div class="origin-name">低级士族</div>
+            <div class="origin-desc">门第不高，但有家学渊源，可走文官或武官路线</div>
+            <div class="origin-stats">
+              <div class="origin-stat">
+                <div class="origin-stat-label">军功</div>
+                <div class="origin-stat-value stat-military">2</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">文治</div>
+                <div class="origin-stat-value stat-civil">5</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">人情</div>
+                <div class="origin-stat-value stat-guanxi">3</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">声望</div>
+                <div class="origin-stat-value">50</div>
+              </div>
+            </div>
+          </div>
+          <div onclick="selectOrigin('high-shizu')" class="origin-card">
+            <div class="origin-name">高门士族</div>
+            <div class="origin-desc">名门之后，起点高，适合走清官路线</div>
+            <div class="origin-stats">
+              <div class="origin-stat">
+                <div class="origin-stat-label">军功</div>
+                <div class="origin-stat-value stat-military">5</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">文治</div>
+                <div class="origin-stat-value stat-civil">8</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">人情</div>
+                <div class="origin-stat-value stat-guanxi">10</div>
+              </div>
+              <div class="origin-stat">
+                <div class="origin-stat-label">声望</div>
+                <div class="origin-stat-value">80</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button onclick="startGame()" class="btn btn-primary btn-block hidden" id="start-btn">开始游戏</button>
+      </div>
+
+      <div id="stats-panel" class="section hidden">
+        <div class="game-card">
+          <div class="game-card-title">当前状态</div>
+          <div class="stage-badge" id="stage-badge">宋末齐初</div>
+          <div class="stat-item">
+            <div class="stat-label">军功</div>
+            <div class="stat-value stat-military" id="stat-military">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-military" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">文治</div>
+            <div class="stat-value stat-civil" id="stat-civil">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-civil" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">人情</div>
+            <div class="stat-value stat-guanxi" id="stat-guanxi">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-guanxi" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">官职</div>
+            <div class="stat-value" id="stat-rank">杂佐</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">年龄</div>
+            <div class="stat-value" id="stat-age">20岁</div>
+          </div>
+        </div>
+
+        <div class="game-card">
+          <div class="game-card-title">NPC关系</div>
+          <div class="relation-network" id="relation-network"></div>
+        </div>
+
+        <div class="game-card">
+          <div class="game-card-title">事件记录</div>
+          <div class="event-history" id="event-history"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <div id="game-content" class="hidden">
+        <div class="narrative-panel" id="narrative-panel"></div>
+        <div class="choice-panel" id="choice-panel"></div>
+        <div id="action-panel" class="action-panel hidden">
+          <div class="action-panel-title">下一步行动</div>
+          <div class="action-buttons">
+            <button onclick="CareerMode.interactWithNpc()" class="btn btn-secondary action-btn">
+              <span class="action-icon">👥</span>
+              <span class="action-text">拜访友人</span>
+              <span class="action-desc">与同僚亲友联络感情</span>
+            </button>
+            <button onclick="CareerMode.goTravel()" class="btn btn-secondary action-btn">
+              <span class="action-icon">🗺️</span>
+              <span class="action-text">出门游历</span>
+              <span class="action-desc">前往各地增长见闻</span>
+            </button>
+            <button onclick="CareerMode.continueStory()" class="btn btn-primary action-btn">
+              <span class="action-icon">📖</span>
+              <span class="action-text">继续仕途</span>
+              <span class="action-desc">推进下一段剧情</span>
+            </button>
+          </div>
+        </div>
+        <div id="npc-interact-panel" class="npc-interact-panel hidden">
+          <div class="npc-interact-header">
+            <button onclick="CareerMode.backToActionPanel()" class="btn btn-outline btn-sm">← 返回</button>
+            <span class="npc-interact-title">选择要拜访的人</span>
+          </div>
+          <div id="npc-list" class="npc-list"></div>
+        </div>
+        <div id="travel-panel" class="travel-panel hidden">
+          <div class="travel-header">
+            <button onclick="CareerMode.backToActionPanel()" class="btn btn-outline btn-sm">← 返回</button>
+            <span class="travel-title">选择游历目的地</span>
+          </div>
+          <div id="travel-map" class="travel-map">
+            <div class="travel-map-img">
+              <img src="南朝地理空间交互地图-v9.html" alt="南朝地图" style="display:none">
+              <div class="travel-map-placeholder">
+                <div class="map-title">南朝地理图</div>
+                <div class="map-subtitle">点击下方州郡前往游历</div>
+              </div>
+            </div>
+            <div id="travel-cities" class="travel-cities"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="ending-panel" class="ending-panel hidden">
+        <div class="ending-title" id="ending-title"></div>
+        <div class="ending-narrative" id="ending-narrative"></div>
+        <div class="ending-section">
+          <div class="ending-section-title">【史臣曰】</div>
+          <div class="ending-section-content" id="ending-shichen"></div>
+        </div>
+        <div class="ending-section">
+          <div class="ending-section-title">【官方评价】</div>
+          <div class="ending-section-content" id="ending-official"></div>
+        </div>
+        <div class="ending-section">
+          <div class="ending-section-title">【名家评价】</div>
+          <div class="ending-section-content" id="ending-scholars"></div>
+        </div>
+        <div class="ending-section">
+          <div class="ending-section-title">【现代启示】</div>
+          <div class="ending-modern" id="ending-modern"></div>
+        </div>
+        <button onclick="restartGame()" class="btn btn-primary">再来一局</button>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    window.addEventListener('error', function(e) {
+      console.error('全局错误:', e.message, e.filename, e.lineno);
+      alert('错误: ' + e.message + '\n文件: ' + e.filename + '\n行: ' + e.lineno);
+    });
+    
+    window.addEventListener('unhandledrejection', function(e) {
+      console.error('未处理的 Promise 拒绝:', e.reason);
+      alert('Promise 错误: ' + e.reason);
+    });
+  </script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="career.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM 加载完成');
+      console.log('GameData:', typeof GameData !== 'undefined' ? '已定义' : '未定义');
+      console.log('CareerMode:', typeof CareerMode !== 'undefined' ? '已定义' : '未定义');
+      Utils.load();
+      CareerMode.init();
+    });
+
+    function selectOrigin(origin) {
+      GameState.career.origin = origin;
+      document.querySelectorAll('.origin-card').forEach(card => card.classList.remove('selected'));
+      const cards = document.querySelectorAll('.origin-card');
+      const originNames = {
+        'hanmen': '寒门子弟',
+        'low-shizu': '低级士族',
+        'high-shizu': '高门士族'
+      };
+      cards.forEach(card => {
+        if (card.textContent.includes(originNames[origin])) {
+          card.classList.add('selected');
+        }
+      });
+      document.getElementById('start-btn').classList.remove('hidden');
+    }
+
+    function startGame() {
+      if (!GameState.career.origin) {
+        alert('请先选择出身！');
+        return;
+      }
+      if (typeof CareerMode === 'undefined') {
+        alert('游戏模块加载失败，请刷新页面重试');
+        console.error('CareerMode 未定义，career.js 可能加载失败');
+        return;
+      }
+      try {
+        CareerMode.startGame();
+      } catch (e) {
+        console.error('startGame 异常:', e);
+        alert('启动游戏时出错：' + e.message);
+      }
+    }
+
+    function goHome() {
+      Utils.save();
+      window.location.href = 'index.html';
+    }
+
+    function saveGame() {
+      Utils.save();
+      alert('游戏已保存');
+    }
+
+    function restartGame() {
+      CareerMode.restart();
+    }
+  </script>
+</body>
+</html>

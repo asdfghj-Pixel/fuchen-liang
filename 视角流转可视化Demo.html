@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浮沉梁 · 城乡流转路径可视化</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a0f0a;
+    color: #e8d5b7;
+    font-family: 'Noto Serif SC', serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+  }
+
+  /* ===== 侧边栏 ===== */
+  .sidebar {
+    width: 320px;
+    min-width: 320px;
+    height: 100vh;
+    background: linear-gradient(180deg, #1e150e 0%, #150d07 100%);
+    border-right: 2px solid #3a2a1a;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 10;
+    scrollbar-width: thin;
+    scrollbar-color: #3a2a1a #1a0f0a;
+  }
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-track { background: #1a0f0a; }
+  .sidebar::-webkit-scrollbar-thumb { background: #3a2a1a; border-radius: 3px; }
+
+  .sidebar-header {
+    padding: 28px 24px 18px;
+    border-bottom: 1px solid #3a2a1a;
+    background: radial-gradient(ellipse at center, rgba(212,168,83,0.06) 0%, transparent 70%);
+  }
+  .sidebar-header .project-tag {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #8b7355;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .sidebar-header h1 {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 26px;
+    color: #d4a853;
+    font-weight: 400;
+    line-height: 1.3;
+    text-shadow: 0 0 20px rgba(212,168,83,0.3);
+  }
+  .sidebar-header .subtitle {
+    font-size: 13px;
+    color: #8b7355;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  .sidebar-section {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(58,42,26,0.5);
+  }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: #6b5a42;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-label::before {
+    content: '';
+    width: 8px; height: 8px;
+    border: 1px solid #6b5a42;
+    transform: rotate(45deg);
+    display: inline-block;
+  }
+
+  .context-panel {
+    font-size: 13px;
+    line-height: 1.9;
+    color: #a08a6a;
+  }
+  .context-panel .quote {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-left: 2px solid #d4a853;
+    background: rgba(212,168,83,0.05);
+    font-size: 12px;
+    color: #c9a85c;
+    font-style: italic;
+    line-height: 1.8;
+  }
+
+  /* 筛选按钮组 */
+  .filter-group {
+    display: flex;
+    gap: 8px;
+  }
+  .filter-btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 12px;
+    border: 1px solid #3a2a1a;
+    background: rgba(26,15,10,0.8);
+    color: #8b7355;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .filter-btn:hover {
+    border-color: #d4a853;
+    color: #d4a853;
+  }
+  .filter-btn.active {
+    background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05));
+    border-color: #d4a853;
+    color: #d4a853;
+    box-shadow: 0 0 10px rgba(212,168,83,0.1);
+  }
+  .filter-btn .dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .dot.active-dot { background: #3cb478; }
+  .dot.passive-dot { background: #b43c3c; }
+
+  /* 侯景之乱按钮 */
+  .houjing-btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 13px;
+    border: 1px solid #5a2020;
+    background: linear-gradient(135deg, rgba(180,60,60,0.1), rgba(100,30,30,0.05));
+    color: #c85a5a;
+    cursor: pointer;
+    transition: all 0.4s;
+    border-radius: 4px;
+    letter-spacing: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .houjing-btn:hover {
+    background: linear-gradient(135deg, rgba(180,60,60,0.25), rgba(100,30,30,0.15));
+    border-color: #b43c3c;
+    color: #e87070;
+    box-shadow: 0 0 20px rgba(180,60,60,0.2);
+  }
+  .houjing-btn.active {
+    background: linear-gradient(135deg, rgba(180,60,60,0.35), rgba(100,30,30,0.2));
+    border-color: #d4a853;
+    color: #d4a853;
+    animation: houjingPulse 1.5s infinite;
+  }
+  @keyframes houjingPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(212,168,83,0.2); }
+    50% { box-shadow: 0 0 25px rgba(212,168,83,0.4); }
+  }
+
+  /* 路径详情面板 */
+  .detail-panel {
+    display: none;
+    animation: fadeSlideIn 0.3s ease;
+  }
+  .detail-panel.visible { display: block; }
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .detail-card {
+    background: rgba(212,168,83,0.04);
+    border: 1px solid #3a2a1a;
+    border-radius: 6px;
+    padding: 16px;
+  }
+  .detail-card .detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #2a1f14;
+  }
+  .detail-card .path-name {
+    font-size: 14px;
+    color: #d4a853;
+    font-weight: 600;
+  }
+  .detail-card .type-badge {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .type-badge.active-type {
+    background: rgba(60,180,120,0.15);
+    color: #3cb478;
+    border: 1px solid rgba(60,180,120,0.3);
+  }
+  .type-badge.passive-type {
+    background: rgba(180,60,60,0.15);
+    color: #c85a5a;
+    border: 1px solid rgba(180,60,60,0.3);
+  }
+  .type-badge.mixed-type {
+    background: rgba(212,168,83,0.15);
+    color: #d4a853;
+    border: 1px solid rgba(212,168,83,0.3);
+  }
+  .detail-row {
+    margin-bottom: 10px;
+  }
+  .detail-row .label {
+    font-size: 11px;
+    color: #6b5a42;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .detail-row .value {
+    font-size: 13px;
+    color: #c9a85c;
+    line-height: 1.7;
+  }
+  .detail-row .value .source {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #8b7355;
+    font-style: italic;
+  }
+
+  /* ===== Canvas区域 ===== */
+  .canvas-wrapper {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(ellipse at 30% 50%, rgba(58,42,26,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 30%, rgba(212,168,83,0.03) 0%, transparent 50%),
+                #1a0f0a;
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* 图例 */
+  .legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: #8b7355;
+    background: rgba(26,15,10,0.85);
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: 1px solid #2a1f14;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-line {
+    width: 24px;
+    height: 3px;
+    border-radius: 2px;
+  }
+
+  /* 提示文字 */
+  .hint {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    font-size: 11px;
+    color: #5a4a32;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 侧边栏 ===== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="project-tag">浮沉梁 · 南朝</div>
+    <h1>城乡流转路径</h1>
+    <div class="subtitle">劳动者阶级的上升与沉沦</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-label">情境说明</div>
+    <div class="context-panel">
+      南朝时期，士族门阀把持朝政，赋税沉重，战乱频仍。底层劳动者在城乡之间艰难流转——或因天灾人祸被迫离乡，或凭手艺勤勉跻身市井。
+      <div class="quote">
+        "宋齐时期田租沿用东晋制度，丁男需额外负担禄米二担，加之调绢布帛、杂役征发，小农负担常达收成之七成以上……"
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="section-label">路径筛选</div>
+    <div class="filter-group">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">全部</button>
+      <button class="filter-btn" data-filter="active" onclick="setFilter('active')"><span class="dot active-dot"></span>主动</button>
+      <button class="filter-btn" data-filter="passive" onclick="setFilter('passive')"><span class="dot passive-dot"></span>被动</button>
+    </div>
+  </div>
+
+  <div class="sidebar-section">
+    <button class="houjing-btn" id="houjingBtn" onclick="toggleHoujing()">触发侯景之乱</button>
+  </div>
+
+  <div class="sidebar-section detail-panel" id="detailPanel">
+    <div class="section-label">路径详情</div>
+    <div class="detail-card" id="detailCard">
+      <div class="detail-header">
+        <span class="path-name" id="detailPathName">—</span>
+        <span class="type-badge" id="detailTypeBadge">—</span>
+      </div>
+      <div class="detail-row">
+        <div class="label">触发条件</div>
+        <div class="value" id="detailCondition">—</div>
+      </div>
+      <div class="detail-row">
+        <div class="label">目标身份</div>
+        <div class="value" id="detailTarget">—</div>
+      </div>
+      <div class="detail-row">
+        <div class="label">史料依据</div>
+        <div class="value" id="detailSource">—</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ===== Canvas 区域 ===== -->
+<div class="canvas-wrapper">
+  <canvas id="mainCanvas"></canvas>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-line" style="background:#3cb478;"></div>
+      <span>主动流转</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:#b43c3c;"></div>
+      <span>被动流转</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-line" style="background:linear-gradient(90deg,#3cb478,#b43c3c);"></div>
+      <span>主动/被动</span>
+    </div>
+  </div>
+  <div class="hint">悬停节点查看关联路径 · 点击路径箭头查看详情</div>
+</div>
+
+<script>
+// ==================== 数据定义 ====================
+
+// 乡村节点
+const ruralNodes = [
+  { id: 'selfFarmer', name: '自耕农',   icon: '\u{1F33E}', color: '#3cb478', rx: 0.12, ry: 0.18, desc: '拥有少量耕地的自由民，需承担田租、户调及徭役' },
+  { id: 'tenant',     name: '佃户',     icon: '\u{1F331}', color: '#5a8a6a', rx: 0.12, ry: 0.36, desc: '部曲/佃客，依附于士族地主，缴纳高额地租' },
+  { id: 'slave',       name: '奴隶',     icon: '\u26D3\uFE0F', color: '#8b6540', rx: 0.12, ry: 0.54, desc: '奴婢，无人身自由，可被买卖转让' },
+  { id: 'soldier',     name: '兵户',     icon: '\u2694\uFE0F', color: '#b8342a', rx: 0.12, ry: 0.72, desc: '世代为兵的军户，常被征发作战' },
+  { id: 'clerk',       name: '吏户',     icon: '\u{1F4DC}', color: '#5082dc', rx: 0.12, ry: 0.88, desc: '底层胥吏，承担文书杂役，有一定文化' },
+];
+
+// 城市节点
+const urbanNodes = [
+  { id: 'lower',  name: '底层：帮工 / 小贩 / 流民', icon: '\u{1F3D7}\uFE0F', color: '#8b6540', rx: 0.85, ry: 0.78, desc: '城市最底层劳动者，出卖体力谋生' },
+  { id: 'middle', name: '中层：工匠 / 小商人',       icon: '\u{1F528}\u{1F3EA}', color: '#3cb478', rx: 0.85, ry: 0.46, desc: '掌握手艺或从事小规模商贸的市民' },
+  { id: 'upper',  name: '上层：大商人 / 行会领袖',   icon: '\u{1F3DB}\uFE0F', color: '#d4a853', rx: 0.85, ry: 0.18, desc: '坐拥商铺、工坊的富商，具有相当社会影响力' },
+];
+
+// 中间过渡节点
+const middleNodes = [
+  { id: 'refugee', name: '流民', icon: '\u{1F6A8}', color: '#b85a3a', rx: 0.50, ry: 0.88, desc: '战乱中失去生计、四处流亡的失地农民' },
+];
+
+const allNodes = [...ruralNodes, ...urbanNodes, ...middleNodes];
+const nodeMap = {};
+allNodes.forEach(n => nodeMap[n.id] = n);
+
+// 流转路径
+const paths = [
+  {
+    id: 1, from: 'selfFarmer', to: 'lower', type: 'passive',
+    condition: '连续两年歉收 + 税负超过收成七成，无力维持生计，被迫弃地流入城市',
+    source: '《宋书·食货志》载：小农"岁或不登，则卖妻鬻子"',
+    targetDesc: '沦为城市帮工，出卖体力维持最低生存',
+    name: '自耕农 → 底层帮工',
+  },
+  {
+    id: 2, from: 'selfFarmer', to: 'middle', type: 'active',
+    condition: '家中男丁年满十五，由邻里引荐，拜入城中匠师门下学艺',
+    source: '《南齐书》记建康城中各类作坊需大量学徒，多由乡村选补',
+    targetDesc: '学徒期满后成为独立工匠，可开设小铺',
+    name: '自耕农 → 中层工匠',
+  },
+  {
+    id: 3, from: 'selfFarmer', to: 'middle', type: 'active',
+    condition: '连续三年丰收，家中纺织等副业收入已超过农业正产收入，具备经商资本',
+    source: '《隋书·食货志》记梁朝商税制度完善，乡人亦可入市交易',
+    targetDesc: '以农副产品起家，逐步扩展为小商人',
+    name: '自耕农 → 中层小商人',
+  },
+  {
+    id: 4, from: 'selfFarmer', to: 'lower', type: 'passive',
+    condition: '土地被士族豪强以强买、占垦等方式兼并，丧失生产资料',
+    source: '《宋书》载：士族"占山封水，浸以滋蔓"，小农纷纷失去田产',
+    targetDesc: '失去土地后沦为城市小贩或帮工',
+    name: '自耕农 → 底层小贩',
+  },
+  {
+    id: 5, from: 'tenant', to: 'selfFarmer', type: 'active',
+    condition: '辛勤劳作五年以上，积攒足够钱财向地主赎回人身自由并置办小块田产',
+    source: '《梁书》记有佃客"佣力十年，得赎身为编户"',
+    targetDesc: '获得自由民身份，拥有小块自耕地，但仍需承担赋税',
+    name: '佃户 → 自耕农',
+  },
+  {
+    id: 6, from: 'tenant', to: 'lower', type: 'passive',
+    condition: '被地主驱逐或因地主家道中落而失去庇护，被迫流入城市谋生',
+    source: '《南史》载有部曲被主家"放遣"后"流寓京师"的记载',
+    targetDesc: '入城充当帮工或零工度日',
+    name: '佃户 → 底层帮工',
+  },
+  {
+    id: 7, from: 'slave', to: 'tenant', type: 'passive',
+    condition: '主人自愿放免奴婢为良人，通常出于积德、宗教信仰或政治需要',
+    source: '《梁书·武帝纪》载梁武帝崇佛后多次下诏"放免奴婢"',
+    targetDesc: '获得依附民身份，佃种小块土地，但仍受前主人一定程度的支配',
+    name: '奴隶 → 佃户',
+  },
+  {
+    id: 8, from: 'slave', to: 'lower', type: 'passive',
+    condition: '侯景之乱期间，大量奴婢被侯景军队"免奴为民"以扩充兵力，后流散城市',
+    source: '《南史·侯景传》：侯景"免奴为民"以充军实，乱后奴婢大量流入城市',
+    targetDesc: '重获自由身，但缺乏谋生手段，沦为城市底层帮工',
+    houjingRelated: true,
+    name: '奴隶 → 底层帮工',
+  },
+  {
+    id: 9, from: 'soldier', to: 'refugee', type: 'passive',
+    condition: '侯景之乱中兵营溃散，士兵失去建制和军饷，沦为流民',
+    source: '《资治通鉴》载侯景之乱时"台城陷，百官崩散，军户流离"',
+    targetDesc: '失去军籍和生计，在城乡间游荡',
+    houjingRelated: true,
+    name: '兵户 → 流民',
+  },
+  {
+    id: 10, from: 'clerk', to: 'middle', type: 'mixed',
+    condition: '被罢免官职或主动辞官，利用在任期间积累的商业人脉与信息优势入行经商',
+    source: '《南史》载有"胥吏罢归，以通关津之便，转而逐利"的记载',
+    targetDesc: '凭借文书经验和信息网络成为小商人，部分可向上发展为中等商人',
+    name: '吏户 → 中层商人',
+  },
+  {
+    id: 11, from: 'refugee', to: 'lower', type: 'passive',
+    condition: '流民最终流入城市，在城门附近或码头充当苦力',
+    source: '《南史》载侯景乱后建康"流民填塞街巷，乞讨为生"',
+    targetDesc: '流民入城后沦为最底层的帮工或乞讨者',
+    houjingRelated: true,
+    name: '流民 → 底层',
+  },
+];
+
+// ==================== Canvas 初始化 ====================
+
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = rect.width;
+  H = rect.height;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', () => { resize(); });
+resize();
+
+// ==================== 状态 ====================
+
+let currentFilter = 'all';    // all / active / passive
+let houjingMode = false;
+let hoveredNode = null;
+let selectedPath = null;
+let particles = [];
+let time = 0;
+
+// ==================== 工具函数 ====================
+
+function getNodePos(node) {
+  return { x: node.rx * W, y: node.ry * H };
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function dist(x1, y1, x2, y2) {
+  return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+}
+
+function bezierPoint(p0, p1, p2, p3, t) {
+  const u = 1 - t;
+  return {
+    x: u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+    y: u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y,
+  };
+}
+
+function getControlPoints(from, to) {
+  const fp = getNodePos(from);
+  const tp = getNodePos(to);
+  const mx = (fp.x + tp.x) / 2;
+  const dy = tp.y - fp.y;
+  return {
+    p0: fp,
+    p1: { x: mx, y: fp.y + dy * 0.1 },
+    p2: { x: mx, y: tp.y - dy * 0.1 },
+    p3: tp,
+  };
+}
+
+function isPathVisible(path) {
+  if (currentFilter === 'all') return true;
+  if (currentFilter === 'active' && path.type === 'active') return true;
+  if (currentFilter === 'passive' && path.type === 'passive') return true;
+  if (currentFilter === 'active' && path.type === 'mixed') return true;
+  if (currentFilter === 'passive' && path.type === 'mixed') return true;
+  return false;
+}
+
+function isPathRelatedToNode(path, nodeId) {
+  return path.from === nodeId || path.to === nodeId;
+}
+
+function isPathHighlighted(path) {
+  if (selectedPath && selectedPath.id === path.id) return true;
+  if (hoveredNode && isPathRelatedToNode(path, hoveredNode.id)) return true;
+  return false;
+}
+
+function getPathColor(path, alpha) {
+  if (path.type === 'active') return `rgba(60,180,120,${alpha})`;
+  if (path.type === 'passive') return `rgba(180,60,60,${alpha})`;
+  if (path.type === 'mixed') return `rgba(160,130,83,${alpha})`;
+  return `rgba(212,168,83,${alpha})`;
+}
+
+function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx*dx + dy*dy;
+  let t = ((px - x1)*dx + (py - y1)*dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return dist(px, py, x1 + t*dx, y1 + t*dy);
+}
+
+function pointToBezierDist(px, py, ctrl) {
+  let minD = Infinity;
+  for (let i = 0; i <= 20; i++) {
+    const t = i / 20;
+    const pt = bezierPoint(ctrl.p0, ctrl.p1, ctrl.p2, ctrl.p3, t);
+    minD = Math.min(minD, dist(px, py, pt.x, pt.y));
+  }
+  return minD;
+}
+
+// ==================== 粒子系统 ====================
+
+function initParticles() {
+  particles = [];
+  paths.forEach(path => {
+    if (!isPathVisible(path)) return;
+    const count = path.houjingRelated ? 6 : 4;
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        pathId: path.id,
+        t: Math.random(),
+        speed: 0.002 + Math.random() * 0.003,
+        size: 2 + Math.random() * 2,
+        alpha: 0.5 + Math.random() * 0.5,
+      });
+    }
+  });
+}
+
+function updateParticles() {
+  particles.forEach(p => {
+    p.t += p.speed;
+    if (p.t > 1) p.t -= 1;
+  });
+}
+
+function drawParticles() {
+  particles.forEach(p => {
+    const path = paths.find(pa => pa.id === p.pathId);
+    if (!path || !isPathVisible(path)) return;
+    const from = nodeMap[path.from];
+    const to = nodeMap[path.to];
+    const ctrl = getControlPoints(from, to);
+
+    let alpha = p.alpha;
+    if (hoveredNode && !isPathRelatedToNode(path, hoveredNode.id)) alpha *= 0.15;
+    if (selectedPath && selectedPath.id !== path.id) alpha *= 0.15;
+    if (houjingMode && !path.houjingRelated) alpha *= 0.1;
+
+    const pt = bezierPoint(ctrl.p0, ctrl.p1, ctrl.p2, ctrl.p3, p.t);
+    const glowAlpha = alpha * (0.6 + 0.4 * Math.sin(time * 3 + p.t * 10));
+
+    // 粒子发光
+    const color = getPathColor(path, 1);
+    const r = parseInt(color.slice(color.indexOf('(') + 1), 10) || 200;
+    const g = parseInt(color.split(',')[1], 10) || 160;
+    const b = parseInt(color.split(',')[2], 10) || 60;
+
+    ctx.beginPath();
+    const grad = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, p.size * 3);
+    grad.addColorStop(0, `rgba(${r},${g},${b},${glowAlpha})`);
+    grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
+    ctx.fillStyle = grad;
+    ctx.arc(pt.x, pt.y, p.size * 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 粒子核心
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(255,255,240,${glowAlpha * 0.9})`;
+    ctx.arc(pt.x, pt.y, p.size * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+// ==================== 绘制函数 ====================
+
+function drawBackground() {
+  // 暗色基调
+  let bgColor = '#1a0f0a';
+  if (houjingMode) {
+    const pulse = 0.5 + 0.5 * Math.sin(time * 1.5);
+    const r = lerp(26, 40, pulse);
+    const g = lerp(15, 10, pulse);
+    const b = lerp(10, 10, pulse);
+    bgColor = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+  }
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, W, H);
+
+  // 网格装饰线
+  ctx.strokeStyle = 'rgba(58,42,26,0.15)';
+  ctx.lineWidth = 0.5;
+  const gridSize = 60;
+  for (let x = 0; x < W; x += gridSize) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += gridSize) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // 区域标签
+  ctx.font = '600 16px "Noto Serif SC", serif';
+  ctx.textAlign = 'center';
+
+  // 乡村区域框
+  const ruralX = W * 0.12;
+  ctx.strokeStyle = 'rgba(58,42,26,0.3)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(ruralX - 80, H * 0.10, 160, H * 0.84);
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = 'rgba(107,90,66,0.6)';
+  ctx.font = '600 13px "Noto Serif SC", serif';
+  ctx.fillText('乡村', ruralX, H * 0.10 - 8);
+
+  // 城市区域框
+  const urbanX = W * 0.85;
+  ctx.strokeStyle = 'rgba(212,168,83,0.15)';
+  ctx.setLineDash([4, 4]);
+  ctx.strokeRect(urbanX - 120, H * 0.08, 240, H * 0.84);
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = 'rgba(212,168,83,0.4)';
+  ctx.fillText('城市', urbanX, H * 0.08 - 8);
+
+  // 中间方向指示
+  ctx.fillStyle = 'rgba(107,90,66,0.2)';
+  ctx.font = '12px "Noto Serif SC", serif';
+  ctx.fillText('—— 流转方向 ——', W * 0.50, H * 0.08 - 8);
+}
+
+function drawArrowHead(x, y, angle, color) {
+  const size = 10;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-size, -size * 0.5);
+  ctx.lineTo(-size, size * 0.5);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPaths() {
+  paths.forEach(path => {
+    if (!isPathVisible(path)) return;
+
+    const from = nodeMap[path.from];
+    const to = nodeMap[path.to];
+    if (!from || !to) return;
+
+    const ctrl = getControlPoints(from, to);
+
+    // 判断高亮/暗淡
+    let alpha = 0.6;
+    let lineWidth = 2;
+    let glowSize = 0;
+
+    if (hoveredNode || selectedPath) {
+      if (isPathHighlighted(path)) {
+        alpha = 1.0;
+        lineWidth = 3;
+        glowSize = 12;
+      } else {
+        alpha = 0.1;
+        lineWidth = 1;
+      }
+    }
+
+    if (houjingMode) {
+      if (path.houjingRelated) {
+        const flash = 0.5 + 0.5 * Math.sin(time * 4);
+        alpha = lerp(0.6, 1.0, flash);
+        lineWidth = 3 + flash;
+        glowSize = 15 + flash * 5;
+      } else {
+        alpha *= 0.1;
+      }
+    }
+
+    const color = getPathColor(path, alpha);
+
+    // 发光效果
+    if (glowSize > 0) {
+      const glowColor = houjingMode && path.houjingRelated
+        ? `rgba(212,168,83,${alpha * 0.3})`
+        : getPathColor(path, alpha * 0.25);
+      ctx.beginPath();
+      ctx.moveTo(ctrl.p0.x, ctrl.p0.y);
+      ctx.bezierCurveTo(ctrl.p1.x, ctrl.p1.y, ctrl.p2.x, ctrl.p2.y, ctrl.p3.x, ctrl.p3.y);
+      ctx.strokeStyle = glowColor;
+      ctx.lineWidth = glowSize;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
+
+    // 主路径线
+    ctx.beginPath();
+    ctx.moveTo(ctrl.p0.x, ctrl.p0.y);
+    ctx.bezierCurveTo(ctrl.p1.x, ctrl.p1.y, ctrl.p2.x, ctrl.p2.y, ctrl.p3.x, ctrl.p3.y);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // 箭头
+    const arrowT = 0.92;
+    const arrowPt = bezierPoint(ctrl.p0, ctrl.p1, ctrl.p2, ctrl.p3, arrowT);
+    const arrowPt2 = bezierPoint(ctrl.p0, ctrl.p1, ctrl.p2, ctrl.p3, arrowT - 0.02);
+    const angle = Math.atan2(arrowPt.y - arrowPt2.y, arrowPt.x - arrowPt2.x);
+    drawArrowHead(arrowPt.x, arrowPt.y, angle, color);
+
+    // 同一目标多条路径时添加偏移
+    // (已在控制点计算中自然分散)
+  });
+}
+
+function drawNode(node) {
+  const pos = getNodePos(node);
+  const isHovered = hoveredNode && hoveredNode.id === node.id;
+  const isRelated = hoveredNode && hoveredNode.id !== node.id;
+  const nodeW = node.id.includes('lower') || node.id.includes('middle') || node.id.includes('upper') ? 180 : 120;
+  const nodeH = node.id.includes('lower') || node.id.includes('middle') || node.id.includes('upper') ? 50 : 48;
+  const scale = isHovered ? 1.08 : 1;
+  const cornerR = 8;
+
+  ctx.save();
+  ctx.translate(pos.x, pos.y);
+  ctx.scale(scale, scale);
+  ctx.translate(-pos.x, -pos.y);
+
+  const x = pos.x - nodeW / 2;
+  const y = pos.y - nodeH / 2;
+
+  // 节点背景
+  let bgAlpha = 0.85;
+  let borderAlpha = 0.6;
+  if (hoveredNode && !isRelated && !isHovered) {
+    bgAlpha = 0.3;
+    borderAlpha = 0.2;
+  }
+  if (isHovered) {
+    borderAlpha = 1.0;
+  }
+
+  // 外发光
+  if (isHovered) {
+    const [r, g, b] = hexToRgb(node.color);
+    ctx.shadowColor = `rgba(${r},${g},${b},0.5)`;
+    ctx.shadowBlur = 20;
+  }
+
+  // 圆角矩形
+  ctx.beginPath();
+  roundRect(ctx, x, y, nodeW, nodeH, cornerR);
+  ctx.fillStyle = `rgba(26,15,10,${bgAlpha})`;
+  ctx.fill();
+  ctx.strokeStyle = hexToRgba(node.color, borderAlpha);
+  ctx.lineWidth = isHovered ? 2 : 1.5;
+  ctx.stroke();
+
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+
+  // Icon + 名称
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // icon
+  ctx.font = '18px serif';
+  ctx.fillStyle = node.color;
+  const iconX = node.id.includes('lower') || node.id.includes('middle') || node.id.includes('upper') ? pos.x - nodeW/2 + 22 : pos.x - 22;
+  ctx.fillText(node.icon, iconX, pos.y);
+
+  // 名称
+  const nameX = node.id.includes('lower') || node.id.includes('middle') || node.id.includes('upper') ? pos.x + 15 : pos.x + 8;
+  ctx.font = `${node.id.includes('lower') || node.id.includes('middle') || node.id.includes('upper') ? '13' : '14'}px "Noto Serif SC", serif`;
+  ctx.fillStyle = isHovered ? '#fff' : '#e8d5b7';
+  ctx.fillText(node.name, nameX, pos.y);
+
+  ctx.restore();
+
+  // 保存节点命中区域
+  node._hitX = pos.x;
+  node._hitY = pos.y;
+  node._hitW = nodeW * scale;
+  node._hitH = nodeH * scale;
+}
+
+function hexToRgb(hex) {
+  hex = hex.replace('#', '');
+  return [
+    parseInt(hex.substring(0, 2), 16),
+    parseInt(hex.substring(2, 4), 16),
+    parseInt(hex.substring(4, 6), 16),
+  ];
+}
+
+function hexToRgba(hex, alpha) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ==================== 交互 ====================
+
+let mouseX = 0, mouseY = 0;
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+
+  // 检测节点悬停
+  let found = null;
+  for (const node of allNodes) {
+    if (!node._hitX) continue;
+    if (Math.abs(mouseX - node._hitX) < node._hitW / 2 &&
+        Math.abs(mouseY - node._hitY) < node._hitH / 2) {
+      found = node;
+      break;
+    }
+  }
+  hoveredNode = found;
+  canvas.style.cursor = found ? 'pointer' : 'default';
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredNode = null;
+  canvas.style.cursor = 'default';
+});
+
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  // 检测路径点击
+  let foundPath = null;
+  let minDist = 15;
+
+  for (const path of paths) {
+    if (!isPathVisible(path)) continue;
+    const from = nodeMap[path.from];
+    const to = nodeMap[path.to];
+    if (!from || !to) continue;
+    const ctrl = getControlPoints(from, to);
+    const d = pointToBezierDist(cx, cy, ctrl);
+    if (d < minDist) {
+      minDist = d;
+      foundPath = path;
+    }
+  }
+
+  if (foundPath) {
+    selectedPath = foundPath;
+    showDetail(foundPath);
+  } else {
+    selectedPath = null;
+    hideDetail();
+  }
+});
+
+function showDetail(path) {
+  const panel = document.getElementById('detailPanel');
+  const name = document.getElementById('detailPathName');
+  const badge = document.getElementById('detailTypeBadge');
+  const condition = document.getElementById('detailCondition');
+  const target = document.getElementById('detailTarget');
+  const source = document.getElementById('detailSource');
+
+  name.textContent = path.name;
+
+  if (path.type === 'active') {
+    badge.textContent = '主动';
+    badge.className = 'type-badge active-type';
+  } else if (path.type === 'passive') {
+    badge.textContent = '被动';
+    badge.className = 'type-badge passive-type';
+  } else {
+    badge.textContent = '主动/被动';
+    badge.className = 'type-badge mixed-type';
+  }
+
+  condition.textContent = path.condition;
+  target.textContent = path.targetDesc;
+  source.innerHTML = path.source + '<span class="source">— 十.城乡流转系统</span>';
+
+  panel.classList.add('visible');
+}
+
+function hideDetail() {
+  document.getElementById('detailPanel').classList.remove('visible');
+}
+
+// ==================== 控制按钮 ====================
+
+function setFilter(type) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.filter === type);
+  });
+  initParticles();
+  selectedPath = null;
+  hideDetail();
+}
+
+function toggleHoujing() {
+  houjingMode = !houjingMode;
+  const btn = document.getElementById('houjingBtn');
+  btn.classList.toggle('active', houjingMode);
+  btn.textContent = houjingMode ? '侯景之乱进行中...' : '触发侯景之乱';
+  if (houjingMode) {
+    initParticles();
+  }
+}
+
+// ==================== 主循环 ====================
+
+function draw() {
+  time += 0.016;
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawPaths();
+  updateParticles();
+  drawParticles();
+
+  // 先绘制所有节点
+  allNodes.forEach(node => drawNode(node));
+
+  // 城市分层标注线
+  drawUrbanLayers();
+
+  requestAnimationFrame(draw);
+}
+
+function drawUrbanLayers() {
+  if (urbanNodes.length === 0) return;
+
+  const urbanX = W * 0.85;
+  const layerLabels = ['上层', '中层', '底层'];
+  const layerYs = [0.18, 0.46, 0.78];
+
+  ctx.font = '11px "Noto Serif SC", serif';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(107,90,66,0.35)';
+
+  layerLabels.forEach((label, i) => {
+    const y = H * layerYs[i];
+    ctx.fillText(label, urbanX + 135, y + 2);
+
+    // 层级分割线
+    if (i < 2) {
+      const midY = (H * layerYs[i] + H * layerYs[i + 1]) / 2;
+      ctx.beginPath();
+      ctx.setLineDash([2, 4]);
+      ctx.strokeStyle = 'rgba(58,42,26,0.2)';
+      ctx.lineWidth = 0.5;
+      ctx.moveTo(urbanX - 125, midY);
+      ctx.lineTo(urbanX + 125, midY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+}
+
+// 初始化
+initParticles();
+draw();
+</script>
+</body>
+</html>

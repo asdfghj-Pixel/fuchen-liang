@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>浮沉梁 · 娱乐模式</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="game-header">
+    <div class="game-title">娱乐模式 · 市井生活</div>
+    <div class="game-nav">
+      <button onclick="goHome()" class="btn btn-outline">返回主页</button>
+      <button onclick="saveGame()" class="btn btn-secondary">保存</button>
+    </div>
+  </header>
+
+  <div class="game-container">
+    <aside class="sidebar">
+      <div id="industry-select" class="section">
+        <div class="historical-quote">
+          <p>"宋齐时期田租沿用东晋制度，丁男需额外负担禄米二担，还增加了亩税米二升的田税……东晋南朝政府还设立诸多名目，在正常赋税之外对人民巧取豪夺。"</p>
+          <p class="quote-source">——综合自《宋书》《南齐书》《通典》</p>
+        </div>
+        <h3 class="section-title">选择行业</h3>
+        <div class="industry-grid">
+          <div onclick="selectIndustry('agriculture')" class="industry-card">
+            <div class="industry-icon">🌾</div>
+            <div class="industry-info">
+              <div class="industry-name">农业</div>
+              <div class="industry-desc">深耕细作，面朝黄土背朝天</div>
+              <div class="industry-detail">选择自耕农、佃户、奴隶、兵户或吏户</div>
+            </div>
+          </div>
+          <div onclick="selectIndustry('industry')" class="industry-card">
+            <div class="industry-icon">🔨</div>
+            <div class="industry-info">
+              <div class="industry-name">工业</div>
+              <div class="industry-desc">匠心独运，凭手艺安身立命</div>
+              <div class="industry-detail">选择纺织、冶铸、造船、制瓷或造纸</div>
+            </div>
+          </div>
+          <div onclick="selectIndustry('commerce')" class="industry-card">
+            <div class="industry-icon">💰</div>
+            <div class="industry-info">
+              <div class="industry-name">商业</div>
+              <div class="industry-desc">买卖经营，在市井中淘金</div>
+              <div class="industry-detail">成为小商贩，体验南朝商业</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="sub-select" class="section hidden">
+        <h3 class="section-title" id="sub-title">选择身份</h3>
+        <div id="agriculture-identities" class="sub-grid hidden">
+          <div onclick="selectSubIdentity('farmer')" class="sub-card">
+            <div class="sub-icon">🌾</div>
+            <div class="sub-name">自耕农</div>
+            <div class="sub-desc">三十亩薄田，日子清贫但自由</div>
+            <div class="sub-class">自由民</div>
+          </div>
+          <div onclick="selectSubIdentity('tenant')" class="sub-card">
+            <div class="sub-icon">🏠</div>
+            <div class="sub-name">佃户（部曲/佃客）</div>
+            <div class="sub-desc">租种地主田地，收成五成归主</div>
+            <div class="sub-class">半自由</div>
+          </div>
+          <div onclick="selectSubIdentity('slave')" class="sub-card">
+            <div class="sub-icon">⛓️</div>
+            <div class="sub-name">奴隶（奴婢）</div>
+            <div class="sub-desc">无自由无财产，生死由主</div>
+            <div class="sub-class">不自由</div>
+          </div>
+          <div onclick="selectSubIdentity('soldier')" class="sub-card">
+            <div class="sub-icon">⚔️</div>
+            <div class="sub-name">兵户</div>
+            <div class="sub-desc">世袭从军，平时屯田战时出征</div>
+            <div class="sub-class">官户</div>
+          </div>
+          <div onclick="selectSubIdentity('clerk')" class="sub-card">
+            <div class="sub-icon">�</div>
+            <div class="sub-name">吏户</div>
+            <div class="sub-desc">县衙小吏，掌握信息夹缝求生</div>
+            <div class="sub-class">半自由</div>
+          </div>
+        </div>
+
+        <div id="industry-crafts" class="sub-grid hidden">
+          <div onclick="selectSubIdentity('textile')" class="sub-card">
+            <div class="sub-icon">🧵</div>
+            <div class="sub-name">纺织</div>
+            <div class="sub-desc">养蚕缫丝，织绢织布</div>
+            <div class="sub-source">豫章一年蚕四五熟</div>
+          </div>
+          <div onclick="selectSubIdentity('metallurgy')" class="sub-card">
+            <div class="sub-icon">⚙️</div>
+            <div class="sub-name">冶铸</div>
+            <div class="sub-desc">水排鼓风，灌钢炼钢</div>
+            <div class="sub-source">陶弘景记载灌钢法</div>
+          </div>
+          <div onclick="selectSubIdentity('shipbuilding')" class="sub-card">
+            <div class="sub-icon">🚢</div>
+            <div class="sub-name">造船</div>
+            <div class="sub-desc">建造运输船、战船</div>
+            <div class="sub-source">建康朱雀航造船基地</div>
+          </div>
+          <div onclick="selectSubIdentity('porcelain')" class="sub-card">
+            <div class="sub-icon">🏺</div>
+            <div class="sub-name">制瓷（青瓷）</div>
+            <div class="sub-desc">采土制坯，上釉烧制</div>
+            <div class="sub-source">越窑青瓷名闻天下</div>
+          </div>
+          <div onclick="selectSubIdentity('papermaking')" class="sub-card">
+            <div class="sub-icon">📄</div>
+            <div class="sub-name">造纸</div>
+            <div class="sub-desc">压光染色，制作银光纸</div>
+            <div class="sub-source">建康"银光纸"著名产品</div>
+          </div>
+        </div>
+
+        <button onclick="backToIndustry()" class="btn btn-outline btn-block" style="margin-top: 10px;">返回选择行业</button>
+      </div>
+
+      <div id="stats-panel" class="section hidden">
+        <div class="game-card">
+          <div class="game-card-title">当前状态</div>
+          <div class="stage-badge" id="stage-badge">正月 · 天监元年</div>
+          <div class="stat-item">
+            <div class="stat-label">银钱</div>
+            <div class="stat-value stat-money" id="stat-money">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-money" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">粮食</div>
+            <div class="stat-value stat-food" id="stat-food">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-food" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">声望</div>
+            <div class="stat-value" id="stat-reputation">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-reputation" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item" id="stat-dependency" style="display: none;">
+            <div class="stat-label">依附度</div>
+            <div class="stat-value" id="value-dependency">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-dependency" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item" id="stat-trust" style="display: none;">
+            <div class="stat-label">信任度</div>
+            <div class="stat-value" id="value-trust">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-trust" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item" id="stat-exp" style="display: none;">
+            <div class="stat-label">军功</div>
+            <div class="stat-value" id="value-exp">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-exp" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item" id="stat-connections" style="display: none;">
+            <div class="stat-label">人脉</div>
+            <div class="stat-value" id="value-connections">0</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-connections" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">身份</div>
+            <div class="stat-value" id="stat-identity">自耕农</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">地点</div>
+            <div class="stat-value" id="stat-location">农村</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">功德值</div>
+            <div class="stat-value" id="stat-merit">50</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-merit" style="width: 50%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">饱食度</div>
+            <div class="stat-value" id="stat-satiety">80</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-satiety" style="width: 80%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">健康</div>
+            <div class="stat-value" id="stat-health">100</div>
+            <div class="stat-bar">
+              <div class="stat-bar-fill" id="bar-health" style="width: 100%"></div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">服饰</div>
+            <div class="stat-value" id="stat-clothing">粗布</div>
+          </div>
+        </div>
+
+        <div class="game-card">
+          <div class="game-card-title">节令日历</div>
+          <div id="festival-calendar"></div>
+        </div>
+
+        <div class="game-card">
+          <div class="game-card-title">事件记录</div>
+          <div class="event-history" id="event-history"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <div id="scene-panel" class="narrative-panel hidden">
+        <div id="scene-title" style="font-size: 18px; margin-bottom: 16px; color: var(--accent-gold-light);"></div>
+        <div id="scene-description"></div>
+      </div>
+
+      <div id="game-content" class="hidden">
+        <div class="narrative-panel" id="narrative-panel"></div>
+        <div class="choice-panel" id="choice-panel"></div>
+        
+        <div id="network-panel" class="network-panel hidden">
+          <div class="network-header">
+            <div class="network-title">社会关系网络</div>
+            <div class="network-subtitle" id="network-subtitle"></div>
+          </div>
+          <div class="network-container">
+            <iframe id="network-iframe" src="" frameborder="0"></iframe>
+          </div>
+        </div>
+      </div>
+
+      <div id="ending-panel" class="ending-panel hidden">
+        <div class="ending-title" id="ending-title"></div>
+        <div class="ending-narrative" id="ending-narrative"></div>
+        <div class="ending-section">
+          <div class="ending-section-title">【一生回顾】</div>
+          <div class="ending-section-content" id="ending-summary"></div>
+        </div>
+        <div class="ending-section">
+          <div class="ending-section-title">【经济成果】</div>
+          <div class="ending-modern" id="ending-economy"></div>
+        </div>
+        <button onclick="restartGame()" class="btn btn-primary">再来一局</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="entertainment.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Utils.load();
+      EntertainmentMode.init();
+    });
+
+    function selectIndustry(industry) {
+      GameState.entertainment.industry = industry;
+      document.querySelectorAll('.industry-card').forEach(card => card.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+
+      document.getElementById('industry-select').classList.add('hidden');
+      document.getElementById('sub-select').classList.remove('hidden');
+
+      if (industry === 'agriculture') {
+        document.getElementById('sub-title').textContent = '选择身份';
+        document.getElementById('agriculture-identities').classList.remove('hidden');
+        document.getElementById('industry-crafts').classList.add('hidden');
+      } else if (industry === 'industry') {
+        document.getElementById('sub-title').textContent = '选择手艺方向';
+        document.getElementById('agriculture-identities').classList.add('hidden');
+        document.getElementById('industry-crafts').classList.remove('hidden');
+      } else if (industry === 'commerce') {
+        GameState.entertainment.identity = 'merchant';
+        GameState.entertainment.location = 'urban';
+        startGame();
+      }
+    }
+
+    function selectSubIdentity(subIdentity) {
+      GameState.entertainment.subIdentity = subIdentity;
+      document.querySelectorAll('.sub-card').forEach(card => card.classList.remove('selected'));
+      event.currentTarget.classList.add('selected');
+
+      const industry = GameState.entertainment.industry;
+      if (industry === 'agriculture') {
+        GameState.entertainment.identity = subIdentity;
+        GameState.entertainment.location = 'rural';
+      } else if (industry === 'industry') {
+        GameState.entertainment.identity = 'artisan';
+        GameState.entertainment.craftType = subIdentity;
+        GameState.entertainment.location = 'urban';
+      }
+
+      startGame();
+    }
+
+    function backToIndustry() {
+      document.getElementById('sub-select').classList.add('hidden');
+      document.getElementById('industry-select').classList.remove('hidden');
+      GameState.entertainment.industry = null;
+      GameState.entertainment.subIdentity = null;
+      GameState.entertainment.identity = null;
+      GameState.entertainment.craftType = null;
+      document.querySelectorAll('.industry-card').forEach(card => card.classList.remove('selected'));
+      document.querySelectorAll('.sub-card').forEach(card => card.classList.remove('selected'));
+    }
+
+    function startGame() {
+      if (typeof EntertainmentMode === 'undefined') {
+        alert('游戏模块加载失败，请刷新页面重试');
+        return;
+      }
+      try {
+        EntertainmentMode.startGame();
+      } catch (e) {
+        console.error('startGame 异常:', e);
+        alert('启动游戏时出错：' + e.message);
+      }
+    }
+
+    function goHome() {
+      Utils.save();
+      window.location.href = 'index.html';
+    }
+
+    function saveGame() {
+      Utils.save();
+      alert('游戏已保存');
+    }
+
+    function restartGame() {
+      EntertainmentMode.restart();
+    }
+  </script>
+</body>
+</html>

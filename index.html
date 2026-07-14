@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>浮沉梁 · AI古今生活镜</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 预览界面专用样式（不污染 style.css 全局） */
+    .preview-section {
+      margin-top: 28px;
+      padding: 20px;
+      background: rgba(45, 31, 20, 0.35);
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      border-radius: 10px;
+    }
+    .preview-section .section-title { margin-bottom: 14px; }
+    .preview-tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .preview-tab {
+      font-family: 'ZCOOL XiaoWei', serif;
+      padding: 8px 18px;
+      font-size: 0.9rem;
+      background: transparent;
+      color: #d4a574;
+      border: 1px solid #8b5a2b;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      letter-spacing: 2px;
+    }
+    .preview-tab:hover { background: rgba(212, 165, 116, 0.15); }
+    .preview-tab.active {
+      background: linear-gradient(180deg, #c9a66b 0%, #a67c52 100%);
+      color: #2d1f14;
+      font-weight: bold;
+      border-color: #f5e6d3;
+    }
+    .preview-frame-wrap {
+      position: relative;
+      width: 100%;
+      background: #2d1f14;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid #8b5a2b;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+    }
+    .preview-iframe {
+      width: 100%;
+      height: 560px;
+      border: none;
+      display: block;
+    }
+    .preview-caption {
+      margin-top: 10px;
+      color: #a67c52;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      line-height: 1.6;
+      text-align: center;
+    }
+    .feature-tag {
+      display: inline-block;
+      padding: 2px 8px;
+      margin: 2px 3px;
+      font-size: 0.72rem;
+      background: rgba(212, 165, 116, 0.15);
+      color: #d4a574;
+      border: 1px solid rgba(212, 165, 116, 0.4);
+      border-radius: 10px;
+      letter-spacing: 1px;
+    }
+    .feature-tag.highlight {
+      background: rgba(192, 57, 43, 0.2);
+      color: #f5b7a6;
+      border-color: rgba(192, 57, 43, 0.5);
+    }
+    .mode-card .mode-features { display: flex; flex-wrap: wrap; gap: 4px; }
+    .mode-card .mode-features span { margin: 0; }
+  </style>
+</head>
+<body>
+  <div id="main-container" class="main-container">
+    <div class="content-wrapper">
+      <header class="main-header">
+        <h1 class="title">浮沉梁</h1>
+        <p class="subtitle">AI古今生活镜 · 南朝浮生双轨模拟器</p>
+        <p class="period">宋末至梁末 · 公元479-555年</p>
+      </header>
+
+      <div id="tutorial-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+          <h2 class="modal-title">欢迎来到浮沉梁</h2>
+          <div id="tutorial-text" class="tutorial-text"></div>
+          <div class="modal-actions">
+            <button onclick="startTutorial()" class="btn btn-primary">推荐玩法：职场模式</button>
+            <button onclick="skipTutorial()" class="btn btn-secondary">跳过引导，直接开始</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="origin-select" class="section hidden">
+        <h3 class="section-title">选择出身</h3>
+        <div class="mode-grid">
+          <div onclick="selectOrigin('hanmen')" class="origin-card" data-origin="hanmen">
+            <div class="mode-icon">🌾</div>
+            <h4>寒门</h4>
+            <p class="mode-desc">耕读传家，虽清贫但有气节</p>
+            <div class="mode-features">
+              <span class="feature-tag">自耕农</span>
+              <span class="feature-tag">田30亩</span>
+              <span class="feature-tag">钱200文</span>
+              <span class="feature-tag">起点：杂佐</span>
+              <span class="feature-tag">L2渗透100%</span>
+            </div>
+          </div>
+          <div onclick="selectOrigin('low-shizu')" class="origin-card" data-origin="low-shizu">
+            <div class="mode-icon">🏛️</div>
+            <h4>低级士族</h4>
+            <p class="mode-desc">地方望族，有家学渊源</p>
+            <div class="mode-features">
+              <span class="feature-tag">手工业者</span>
+              <span class="feature-tag">钱500文</span>
+              <span class="feature-tag">有店铺</span>
+              <span class="feature-tag">起点：参军</span>
+              <span class="feature-tag">L2渗透80%</span>
+            </div>
+          </div>
+          <div onclick="selectOrigin('high-shizu')" class="origin-card" data-origin="high-shizu">
+            <div class="mode-icon">👑</div>
+            <h4>高门士族</h4>
+            <p class="mode-desc">名门望族，世代为官</p>
+            <div class="mode-features">
+              <span class="feature-tag">城中富户</span>
+              <span class="feature-tag">钱2000文</span>
+              <span class="feature-tag">多处产业</span>
+              <span class="feature-tag">起点：尚书郎</span>
+              <span class="feature-tag">L3反哺100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="mode-select" class="section hidden">
+        <div id="origin-badge" class="origin-badge"></div>
+        <h3 class="section-title">选择模式</h3>
+        <div class="mode-grid">
+          <div onclick="startMode('career')" class="mode-card" data-mode="career">
+            <div class="mode-icon">⚔️</div>
+            <h4>职场模式</h4>
+            <p class="mode-desc">仕途沉浮，从寒门到公卿</p>
+            <div class="mode-features">
+              <span class="feature-tag highlight">RAG知识库检索</span>
+              <span class="feature-tag">17种结局</span>
+              <span class="feature-tag">4条晋升路线</span>
+              <span class="feature-tag">NPC动态关系</span>
+              <span class="feature-tag">宋齐梁官制</span>
+            </div>
+            <div id="career-bonus" class="bonus-hint"></div>
+          </div>
+          <div onclick="startMode('entertainment')" class="mode-card" data-mode="entertainment">
+            <div class="mode-icon">🏡</div>
+            <h4>娱乐模式</h4>
+            <p class="mode-desc">市井生活，体验南朝岁时节令与赋税制度</p>
+            <div class="mode-features">
+              <span class="feature-tag">28个节令</span>
+              <span class="feature-tag">7种身份</span>
+              <span class="feature-tag">农工商三业</span>
+              <span class="feature-tag">赋税结算系统</span>
+              <span class="feature-tag">身份晋升机制</span>
+            </div>
+            <div id="entertainment-bonus" class="bonus-hint"></div>
+          </div>
+        </div>
+        <button onclick="backToOriginSelect()" class="btn btn-outline" style="margin-top: 20px;">返回出身选择</button>
+      </div>
+
+      <div id="main-menu" class="section">
+        <button onclick="showModeSelect()" class="btn btn-lg btn-primary">开始新游戏</button>
+        <button onclick="continueGame()" class="btn btn-lg btn-secondary">继续游戏</button>
+        <button onclick="openSave()" class="btn btn-lg btn-outline">存档管理</button>
+        <button onclick="openLibrary()" class="btn btn-lg btn-outline">资料馆</button>
+      </div>
+
+      <!-- 预览界面：用 div + iframe 嵌入地图与社会关系网络 -->
+      <div id="preview-panel" class="preview-section">
+        <h3 class="section-title">功能预览</h3>
+        <div class="preview-tabs">
+          <button class="preview-tab active" data-preview="map">🗺️ 南朝地理交互地图</button>
+          <button class="preview-tab" data-preview="social-network">🌐 社会关系网络</button>
+          <button class="preview-tab" data-preview="showcase">📜 创意展示</button>
+        </div>
+        <div class="preview-frame-wrap">
+          <iframe id="preview-iframe" class="preview-iframe" src="南朝地理空间交互地图-v5.html"></iframe>
+        </div>
+        <p class="preview-caption" id="preview-caption">
+          点击地图上的城市标记，可查看该州郡在宋·齐·梁各时期的行政区划沿革。
+        </p>
+      </div>
+
+      <footer class="main-footer">
+        <p>南朝宋末至梁末 · 历史生活模拟器</p>
+        <p class="footer-hint">按 Ctrl+Shift+T 重置引导状态 · 按 Ctrl+Shift+G 跳过引导</p>
+      </footer>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Utils.load();
+      checkTutorial();
+      setupKeyboardShortcuts();
+      setupPreviewTabs();
+    });
+
+    function checkTutorial() {
+      if (!localStorage.getItem('tutorial_seen')) {
+        document.getElementById('tutorial-modal').classList.remove('hidden');
+        showTutorialText();
+      }
+    }
+
+    async function showTutorialText() {
+      const texts = [
+        '◆ 时间：南朝宋末至梁末（479-555年）',
+        '◆ 玩法：在历史事件中做选择，影响命运',
+        '◆ 模式：双轨并行（城乡生活 + 官场仕途）',
+        '◆ 关键：三个数值（军功·文治·人情）',
+        '◆ 新增：职场模式剧情生成前强制 RAG 知识库检索'
+      ];
+      const el = document.getElementById('tutorial-text');
+      el.innerHTML = '';
+      for (let i = 0; i < texts.length; i++) {
+        await Utils.typewriter(el, texts[i] + '<br>');
+        await new Promise(r => setTimeout(r, 700));
+      }
+    }
+
+    function startTutorial() {
+      localStorage.setItem('tutorial_seen', 'true');
+      localStorage.setItem('tutorial_completed', 'false');
+      GameState.career.tutorialMode = true;
+      startMode('career');
+    }
+
+    function skipTutorial() {
+      localStorage.setItem('tutorial_seen', 'true');
+      localStorage.setItem('tutorial_completed', 'true');
+      document.getElementById('tutorial-modal').classList.add('hidden');
+    }
+
+    function showModeSelect() {
+      if (GameState.origin) {
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('origin-select').classList.add('hidden');
+        document.getElementById('mode-select').classList.remove('hidden');
+        updateOriginBadge();
+        updateBonusHints();
+      } else {
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('mode-select').classList.add('hidden');
+        document.getElementById('origin-select').classList.remove('hidden');
+      }
+    }
+
+    function selectOrigin(origin) {
+      GameState.origin = origin;
+      Utils.save();
+      showModeSelect();
+    }
+
+    function backToOriginSelect() {
+      document.getElementById('mode-select').classList.add('hidden');
+      document.getElementById('origin-select').classList.remove('hidden');
+    }
+
+    function updateOriginBadge() {
+      const origin = GameData.origins[GameState.origin];
+      const badge = document.getElementById('origin-badge');
+      if (origin && badge) {
+        badge.textContent = `已选择出身：${origin.name} · ${origin.description}`;
+        badge.style.display = 'block';
+      }
+    }
+
+    function updateBonusHints() {
+      const careerBonus = document.getElementById('career-bonus');
+      const entertainmentBonus = document.getElementById('entertainment-bonus');
+      const completed = (GameState.shared && GameState.shared.completedModes) || {};
+
+      try {
+        if (completed.entertainment) {
+          const bonus = Utils.checkLinkageBonus('career');
+          const parts = [];
+          if (bonus.guanxi) parts.push(`人情+${bonus.guanxi}`);
+          if (bonus.civil) parts.push(`文治+${bonus.civil}`);
+          if (bonus.military) parts.push(`军功+${bonus.military}`);
+          if (bonus.money) parts.push(`金钱+${bonus.money}`);
+          careerBonus.textContent = parts.length > 0 ? `可继承娱乐模式加成：${parts.join(' · ')}` : '';
+        } else {
+          careerBonus.textContent = '';
+        }
+
+        if (completed.career) {
+          const bonus = Utils.checkLinkageBonus('entertainment');
+          const parts = [];
+          if (bonus.money) parts.push(`金钱+${bonus.money}`);
+          if (bonus.reputation) parts.push(`声望+${bonus.reputation}`);
+          if (bonus.connections) parts.push(`人脉+${bonus.connections}`);
+          entertainmentBonus.textContent = parts.length > 0 ? `可继承职场模式加成：${parts.join(' · ')}` : '';
+        } else {
+          entertainmentBonus.textContent = '';
+        }
+      } catch (e) {
+        console.error('更新加成提示出错:', e);
+        careerBonus.textContent = '';
+        entertainmentBonus.textContent = '';
+      }
+    }
+
+    function startMode(mode) {
+      if (!GameState.origin) {
+        alert('请先选择出身！');
+        return;
+      }
+
+      try {
+        GameState.currentMode = mode;
+
+        // 处理模式切换联动（防御性检查）
+        const completed = GameState.shared && GameState.shared.completedModes;
+        if (completed) {
+          const fromMode = completed.career ? 'career' :
+                           completed.entertainment ? 'entertainment' : null;
+          if (fromMode && fromMode !== mode && typeof Utils.handleModeSwitch === 'function') {
+            Utils.handleModeSwitch(fromMode, mode);
+          }
+        }
+
+        Utils.save();
+      } catch (e) {
+        console.error('模式切换联动处理出错:', e);
+      }
+
+      if (mode === 'career') {
+        window.location.href = 'career.html';
+      } else {
+        window.location.href = 'entertainment.html';
+      }
+    }
+
+    function resetGameState() {
+      const origin = GameState.origin;
+
+      GameState.entertainment = {
+        identity: null,
+        location: null,
+        year: 502,
+        month: 1,
+        festival: null,
+        money: 0,
+        food: 0,
+        socialPoints: {},
+        inventory: [],
+        eventHistory: [],
+        relationships: null,
+        reputation: 0,
+        merit: 0,
+        visitOfficialCount: 0,
+        totalBusinessProfit: 0,
+        educationEventCount: 0,
+        oppressedEventCount: 0,
+        health: 100,
+        land: 0,
+        connections: 0,
+        dependency: 0,
+        trust: 0,
+        militaryExp: 0,
+        militaryRank: '',
+        landlordDebt: 0,
+        position: '',
+        marketLevel: '',
+        strength: 0,
+        craftSkill: 0,
+        knowledge: 0,
+        luck: 0,
+        safety: 0,
+        childWisdom: 0,
+        livestock: 0,
+        totalIncome: 0,
+        totalTaxes: 0,
+        taxHistory: []
+      };
+
+      GameState.career = {
+        origin: origin,
+        stage: 1,
+        eventCount: { 1: 0, 2: 0, 3: 0, 4: 0 },
+        military: 0,
+        civil: 0,
+        guanxi: 0,
+        prestige: 0,
+        age: 20,
+        currentRank: '',
+        promotionPath: '',
+        qingzhuo: null,
+        officialSystem: 'songqi',
+        emperorFavor: 0,
+        eventHistory: [],
+        npcRelations: {},
+        choiceHistory: [],
+        faction: null,
+        factionEnemy: null,
+        survivalInHoujing: false,
+        crisisResolved: false,
+        diedTragic: false,
+        ending: null,
+        tutorialMode: false,
+        reputation: 0
+      };
+
+      GameState.origin = origin;
+    }
+
+    function continueGame() {
+      if (GameState.career.eventHistory?.length > 0) {
+        window.location.href = 'career.html';
+      } else if (GameState.entertainment.eventHistory?.length > 0) {
+        window.location.href = 'entertainment.html';
+      } else {
+        alert('暂无存档，开始新游戏吧');
+        showModeSelect();
+      }
+    }
+
+    function openLibrary() {
+      window.location.href = 'library.html';
+    }
+
+    function openSave() {
+      window.location.href = 'save.html';
+    }
+
+    function setupKeyboardShortcuts() {
+      document.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+          e.preventDefault();
+          localStorage.removeItem('tutorial_completed');
+          localStorage.removeItem('tutorial_seen');
+          localStorage.removeItem('hints_shown');
+          alert('引导状态已重置');
+        }
+        if (e.ctrlKey && e.shiftKey && e.key === 'G') {
+          e.preventDefault();
+          localStorage.setItem('tutorial_completed', 'true');
+          alert('已跳过引导局');
+        }
+      });
+    }
+
+    // 预览面板：用 div + iframe 切换不同子页面
+    const PREVIEW_SOURCES = {
+      'map': {
+        src: '南朝地理空间交互地图-v5.html',
+        caption: '点击地图上的城市标记，可查看该州郡在宋·齐·梁各时期的行政区划沿革。'
+      },
+      'social-network': {
+        src: '社会关系网络可视化Demo.html',
+        caption: '社会关系网络：城乡双轨力导向图，邻里互助动态可视化，支持拖拽与点击查看 NPC 详情。'
+      },
+      'showcase': {
+        src: '南朝浮生双轨模拟器-创意展示.html',
+        caption: '创意展示：南朝浮生双轨模拟器完整概念展示与玩法说明。'
+      }
+    };
+
+    function setupPreviewTabs() {
+      const tabs = document.querySelectorAll('.preview-tab');
+      const iframe = document.getElementById('preview-iframe');
+      const caption = document.getElementById('preview-caption');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const key = tab.dataset.preview;
+          const cfg = PREVIEW_SOURCES[key];
+          if (!cfg) return;
+
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+
+          iframe.src = cfg.src;
+          caption.textContent = cfg.caption;
+        });
+      });
+
+      const defaultCfg = PREVIEW_SOURCES['map'];
+      iframe.src = defaultCfg.src;
+      caption.textContent = defaultCfg.caption;
+    }
+  </script>
+</body>
+</html>
