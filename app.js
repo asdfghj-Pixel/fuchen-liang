@@ -100,6 +100,19 @@
       });
     },
 
+    animateNumber: (element, from, to, duration = 800) => {
+      const startTime = performance.now();
+      const update = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(from + (to - from) * eased);
+        element.textContent = current;
+        if (progress < 1) requestAnimationFrame(update);
+      };
+      requestAnimationFrame(update);
+    },
+
     save: () => {
       const saveData = {
         version: '2.0',
@@ -148,6 +161,16 @@
       if (!GameState.shared.achievements) GameState.shared.achievements = [];
     },
 
+    weightedSelect: (items, weightFn) => {
+      const total = items.reduce((sum, item) => sum + weightFn(item), 0);
+      let r = Math.random() * total;
+      for (const item of items) {
+        r -= weightFn(item);
+        if (r <= 0) return item;
+      }
+      return items[items.length - 1];
+    },
+
     handleModeSwitch: (fromMode, toMode) => {
       if (fromMode === 'entertainment' && toMode === 'career') {
         GameState.shared.linkage.entertainmentSaveId = Date.now();
@@ -175,9 +198,33 @@
         return applyCareerFeedback(GameState.career, GameState.entertainment, true);
       }
       return {};
+    },
+
+    showFloatingHint: (key) => {
+      const hintsShown = JSON.parse(localStorage.getItem('hints_shown') || '{}');
+      if (hintsShown[key] && hintsShown[key] >= 3) return;
+      if (!GameData.TutorialData.floatingHints[key]) return;
+
+      const hint = document.createElement('div');
+      hint.className = 'floating-hint';
+      hint.innerHTML = `
+        <span class="floating-hint-close" onclick="this.parentElement.remove()">&times;</span>
+        <p>${GameData.TutorialData.floatingHints[key]}</p>
+      `;
+      document.body.appendChild(hint);
+
+      hintsShown[key] = (hintsShown[key] || 0) + 1;
+      localStorage.setItem('hints_shown', JSON.stringify(hintsShown));
+
+      setTimeout(() => {
+        if (hint.parentNode) hint.remove();
+      }, 5000);
+    },
+
+    formatNumber: (num) => {
+      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
   };
-
   function calculateEntertainmentBonus(entertainment) {
     const bonus = {};
     const origin = GameState.origin;
@@ -193,23 +240,28 @@
       const repBonus = Math.floor(entertainment.reputation / 25);
       guanxiBonus += Math.min(5, repBonus);
     }
+
     if (entertainment.merit >= 40) {
       const meritTier = Math.floor((entertainment.merit - 40) / 20) + 1;
       guanxiBonus += Math.min(3, meritTier);
       civilBonus += Math.min(3, meritTier);
     }
+
     if (entertainment.visitOfficialCount >= 3) {
       const visitBonus = Math.floor(entertainment.visitOfficialCount / 3) * 2;
       guanxiBonus += Math.min(5, visitBonus);
     }
+
     if (entertainment.totalBusinessProfit >= 1000) {
       const profitBonus = Math.floor(entertainment.totalBusinessProfit / 1000);
       militaryBonus += Math.min(5, profitBonus);
     }
+
     if (entertainment.educationEventCount >= 2) {
       const eduBonus = entertainment.educationEventCount * 1;
       civilBonus += Math.min(5, eduBonus);
     }
+
     if (entertainment.oppressedEventCount >= 3) {
       moneyBonus += 200;
     }
@@ -267,87 +319,12 @@
       bonus.connections = Math.floor(Math.min(20, career.guanxi) * multiplier);
     }
 
+    if (!preview) {
+      entertainment.money += bonus.money;
+      if (bonus.reputation) entertainment.reputation = (entertainment.reputation || 0) + bonus.reputation;
+      if (bonus.connections) entertainment.connections = (entertainment.connections || 0) + bonus.connections;
+      if (bonus.socialStatus) entertainment.socialStatus = bonus.socialStatus;
+    }
+
     return bonus;
   }
-
-  function triggerCrossModeEvents(fromMode, toMode) {
-    const linkage = GameState.shared.linkage;
-    const origin = GameState.origin;
-    const strength = origin ? (GameData.origins[origin]?.linkageStrength?.L4 || 100) : 100;
-
-    if (strength < 30) return;
-
-    const crossModeEvents = GameData.crossModeEvents || [];
-    const filteredEvents = crossModeEvents.filter(event => 
-      event.triggerMode === fromMode && event.resonateMode === toMode
-    );
-
-    const applicableEvents = filteredEvents.filter(event => {
-      if (fromMode === 'career') {
-        if (event.id === 'linkage_rebel_join') {
-          return GameState.career.choiceHistory.some(c => c.includes('投奔义师'));
-        }
-        if (event.id === 'linkage_battle_victory') {
-          return GameState.career.eventHistory.includes('battle_victory') && !GameState.career.diedTragic;
-        }
-        if (event.id === 'linkage_impeachment_crisis') {
-          return GameState.career.guanxi < 15;
-        }
-        if (event.id === 'linkage_bribe_disaster') {
-          return GameState.career.choiceHistory.some(c => c.includes('破财免灾'));
-        }
-        if (event.id === 'linkage_houjing_siege') {
-          return GameState.career.survivalInHoujing && GameState.career.choiceHistory.some(c => c.includes('守城'));
-        }
-        return true;
-      } else {
-        if (event.id === 'linkage_rural_to_urban') {
-          return GameState.entertainment.location === 'urban';
-        }
-        if (event.id === 'linkage_temple_land_loss') {
-          return GameState.entertainment.eventHistory.some(e => e.includes('寺院') && e.includes('田产'));
-        }
-        if (event.id === 'linkage_business_success') {
-          return GameState.entertainment.totalBusinessProfit >= 1000;
-        }
-        if (event.id === 'linkage_tax_death') {
-          return GameState.entertainment.eventHistory.some(e => e.includes('赋税') && e.includes('去世'));
-        }
-        if (event.id === 'linkage_buddhist_convert') {
-          return GameState.entertainment.ideology?.tags?.includes('皈依佛教');
-        }
-        return true;
-      }
-    });
-
-    const availableEvents = applicableEvents.filter(e => 
-      !linkage.triggeredResonances.includes(e.id)
-    );
-
-    const maxResonances = Math.floor(3 * (strength / 100));
-    const selectedEvents = Utils.sample(availableEvents, Math.min(maxResonances, availableEvents.length));
-
-    selectedEvents.forEach(event => {
-      linkage.triggeredResonances.push(event.id);
-      linkage.crossModeEvents.push(event);
-
-      if (toMode === 'career') {
-        if (event.effects.guanxi) GameState.career.guanxi += event.effects.guanxi;
-        if (event.effects.civil) GameState.career.civil += event.effects.civil;
-        if (event.effects.military) GameState.career.military += event.effects.military;
-        if (event.effects.emperorFavor) GameState.career.emperorFavor += event.effects.emperorFavor;
-      } else {
-        if (event.effects.money) GameState.entertainment.money += event.effects.money;
-        if (event.effects.food) GameState.entertainment.food += event.effects.food;
-        if (event.effects.reputation) GameState.entertainment.reputation += event.effects.reputation;
-        if (event.effects.health) GameState.entertainment.health += event.effects.health;
-        if (event.effects.land) GameState.entertainment.land += event.effects.land;
-      }
-    });
-
-    return selectedEvents;
-  }
-
-  global.GameState = GameState;
-  global.Utils = Utils;
-})(window);
